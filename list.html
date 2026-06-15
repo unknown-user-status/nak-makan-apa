@@ -88,11 +88,6 @@
         const favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
 
         data.forEach(dish => {
-          let revHtml = '';
-          if(dish.reviews) {
-            const revList = dish.reviews.split(' | ');
-            revHtml = `<div class="card-reviews">` + revList.slice(-2).join('<br>') + `</div>`; // show last 2
-          }
           const isFav = favs.includes(dish.name);
           const safeName = dish.name.replace(/'/g, "\\'");
           
@@ -106,8 +101,7 @@
               <div class="card-emoji">${dish.emoji}</div>
               <div class="card-name">${dish.name}</div>
               <div class="card-cat">${dish.category}</div>
-              <div style="font-size:0.9rem; margin-top:5px;">Picked: ${dish.pickCount}x</div>
-              ${revHtml}
+              <div class="card-count">Picked: ${dish.pickCount}</div>
             </div>
           `;
         });
