@@ -1,32 +1,54 @@
-const CACHE_NAME = 'nak-makan-apa-v1';
+const CACHE_NAME = 'nak-makan-apa-v2';
 const urlsToCache = [
   './',
   './index.html',
   './add.html',
   './list.html',
   './review.html',
+  './room.html',
+  './view.html',
   './icon.svg',
   './manifest.json'
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Force activate new service worker instantly
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName); // Delete v1 cache
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
 self.addEventListener('fetch', event => {
+  // NETWORK FIRST, Fallback to Cache
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
+        // If we got a valid response, cache it for offline use
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
         }
-        return fetch(event.request);
+        return response;
+      })
+      .catch(() => {
+        // If offline, return the cached version
+        return caches.match(event.request);
       })
   );
 });
