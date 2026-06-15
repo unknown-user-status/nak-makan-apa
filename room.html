@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Spin Room</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ee7752">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0; padding: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #fff; overflow: hidden;
+  }
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .card {
+    background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 30px;
+    padding: 3rem 2rem; text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    max-width: 90%; width: 500px; z-index: 10;
+  }
+  h1 { font-size: 2.5rem; margin-top: 0; margin-bottom: 1rem; line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+  button.host-btn {
+    font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    color: #333; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    margin: 10px; transition: transform 0.3s;
+  }
+  button.host-btn:hover { transform: scale(1.05); }
+  #result { font-size: 3rem; margin-top: 1.5rem; font-weight: 800; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .dish-name { text-shadow: 2px 2px 8px rgba(0,0,0,0.4); }
+  .dish-emoji { font-size: 5rem; margin-top: 10px; }
+  .winner-anim { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>📡 Live Room</h1>
+    
+    <div id="setup">
+      <p style="font-size: 1.2rem;">Are you the Host or a Viewer?</p>
+      <button class="host-btn" onclick="joinRoom('host')">👑 I am the Host</button>
+      <button class="host-btn" onclick="joinRoom('viewer')">👀 I am a Viewer</button>
+    </div>
+
+    <div id="liveView" style="display: none;">
+      <p id="status" style="font-size: 1.2rem; opacity: 0.9;">Waiting for host to spin...</p>
+      <button id="spinBtn" class="host-btn" style="display: none;" onclick="hostSpin()">🎰 Spin the Wheel!</button>
+      
+      <div id="result">
+        <div style="font-size: 1.5rem; opacity: 0.8;">The wheel is ready...</div>
+      </div>
+    </div>
+    
+    <br><br>
+    <a href="index.html" style="color: #fff; text-decoration: underline; font-weight:bold;">Back to Single Player</a>
+  </div>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playWinSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
+    let role = '';
+    let allDishes = [];
+    let lastTimestamp = 0;
+    let pollInterval = null;
+
+    fetch(WEB_APP_URL)
+      .then(response => response.json())
+      .then(data => { if (data && data.length > 0) allDishes = data; });
+
+    function joinRoom(selectedRole) {
+      role = selectedRole;
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('liveView').style.display = 'block';
+
+      if (role === 'host') {
+        document.getElementById('status').innerText = 'You are the Host! Press Spin to broadcast to all viewers.';
+        document.getElementById('spinBtn').style.display = 'inline-block';
+      } else {
+        document.getElementById('status').innerText = '🟢 Connected! Waiting for host to spin...';
+        startPolling();
+      }
+    }
+
+    function hostSpin() {
+      if (allDishes.length === 0) return alert("Loading dishes...");
+      
+      const winner = allDishes[Math.floor(Math.random() * allDishes.length)];
+      
+      // Update local screen instantly
+      document.getElementById('result').innerHTML = `
+        <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${winner.name}</div>
+        <div class="dish-emoji winner-anim">${winner.emoji}</div>
+      `;
+      playWinSound();
+
+      // Send to server
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'set_live_spin', winnerName: winner.name, winnerEmoji: winner.emoji })
+      });
+    }
+
+    function startPolling() {
+      // Poll every 2 seconds
+      pollInterval = setInterval(() => {
+        fetch(WEB_APP_URL + "?action=get_live_spin")
+          .then(res => res.json())
+          .then(data => {
+            if (data.timestamp && data.timestamp > lastTimestamp) {
+              // New spin detected!
+              if (lastTimestamp !== 0) {
+                playWinSound(); // Only play sound if it's an actual update, not the initial load
+              }
+              lastTimestamp = data.timestamp;
+              document.getElementById('status').innerText = '🎉 The wheel has spoken! 🎉';
+              document.getElementById('result').innerHTML = `
+                <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${data.winnerName}</div>
+                <div class="dish-emoji winner-anim">${data.winnerEmoji}</div>
+              `;
+            }
+          });
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

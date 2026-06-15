@@ -74,6 +74,19 @@ function doPost(e) {
     return json({ result: 'success' });
   }
 
+  if (action === 'set_live_spin') {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let multiSheet = ss.getSheetByName("multiplayer");
+    if (!multiSheet) {
+      multiSheet = ss.insertSheet("multiplayer");
+      multiSheet.appendRow(["timestamp", "winnerName", "winnerEmoji"]);
+    }
+    multiSheet.getRange(2, 1).setValue(Date.now());
+    multiSheet.getRange(2, 2).setValue(payload.winnerName);
+    multiSheet.getRange(2, 3).setValue(payload.winnerEmoji);
+    return json({ result: 'success' });
+  }
+
   return json({ result: 'unknown action' });
 }
 
@@ -87,6 +100,17 @@ function doGet(e) {
     const user = validateToken(p.token);
     if (!user) return json({ ok: false, error: "invalid token" });
     return getAdminData(user);
+  }
+
+  if (p.action === "get_live_spin") {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const multiSheet = ss.getSheetByName("multiplayer");
+    if (!multiSheet) return json({ timestamp: 0 });
+    
+    const ts = multiSheet.getRange(2, 1).getValue();
+    const wName = multiSheet.getRange(2, 2).getValue();
+    const wEmoji = multiSheet.getRange(2, 3).getValue();
+    return json({ timestamp: ts, winnerName: wName, winnerEmoji: wEmoji });
   }
 
   // Public GET (no token needed, hides reviews)
@@ -181,6 +205,10 @@ function initAuth() {
   if (!ss.getSheetByName("sessions")) {
     const sheet = ss.insertSheet("sessions");
     sheet.appendRow(["token", "username", "expires"]);
+  }
+  if (!ss.getSheetByName("multiplayer")) {
+    const sheet = ss.insertSheet("multiplayer");
+    sheet.appendRow(["timestamp", "winnerName", "winnerEmoji"]);
   }
 }
 
