@@ -19,6 +19,8 @@
     <form id="dishForm">
       <input type="text" id="dishName" placeholder="Enter dish name..." required>
       <br>
+      <input type="text" id="dishEmoji" placeholder="Paste an emoji (e.g. 🍔)" required maxlength="2" style="text-align: center;">
+      <br>
       <button type="submit">Add Dish!</button>
     </form>
     <div id="greeting"></div>
@@ -28,9 +30,7 @@
     document.getElementById('dishForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const name = document.getElementById('dishName').value;
-      
-      const foodEmojis = ["😋","🍽️","🥣","🔥","✨","🥘"];
-      const randomEmoji = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
+      const emoji = document.getElementById('dishEmoji').value;
       
       const greetingDiv = document.getElementById('greeting');
       greetingDiv.innerText = 'Saving to database... ⏳';
@@ -42,7 +42,7 @@
         headers: {
           'Content-Type': 'text/plain;charset=utf-8',
         },
-        body: JSON.stringify({ name: name, emoji: randomEmoji })
+        body: JSON.stringify({ name: name, emoji: emoji })
       }).then(() => {
         greetingDiv.innerText = `Yum! Added ${name} to your global database!`;
         this.reset();
