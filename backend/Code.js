@@ -25,7 +25,8 @@ function doPost(e) {
         finalCategory = 'Dinner';
       }
     }
-    sheet.appendRow([payload.name, payload.emoji, finalCategory, 0, '']);
+    const budget = payload.budget || 'Any';
+    sheet.appendRow([payload.name, payload.emoji, finalCategory, 0, '', budget]);
     return json({ result: 'success' });
   }
   
@@ -80,7 +81,8 @@ function doGet(e) {
         name: data[i][0], 
         emoji: data[i][1],
         category: data[i][2] || 'Any',
-        pickCount: Number(data[i][3]) || 0
+        pickCount: Number(data[i][3]) || 0,
+        budget: data[i][5] || 'Any'
       });
     }
   }
@@ -131,7 +133,8 @@ function getAdminData(user) {
         emoji: data[i][1],
         category: data[i][2] || 'Any',
         pickCount: Number(data[i][3]) || 0,
-        reviews: data[i][4] || '' // Full access!
+        reviews: data[i][4] || '', // Full access!
+        budget: data[i][5] || 'Any'
       });
     }
   }

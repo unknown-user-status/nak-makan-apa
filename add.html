@@ -31,6 +31,13 @@
         <option value="Snack">Snack</option>
       </select>
       <br>
+      <select id="dishBudget" style="margin-top: 10px; width: 250px; padding: 10px; font-size: 1.2rem; border-radius: 8px;">
+        <option value="Any">Budget: Any</option>
+        <option value="💲">💲 Murah</option>
+        <option value="💲💲">💲💲 Average</option>
+        <option value="💲💲💲">💲💲💲 Mahal</option>
+      </select>
+      <br>
       <input type="text" id="dishEmoji" placeholder="Emoji (optional, auto-generated if blank)" maxlength="2" style="text-align: center; width: 250px; margin-top: 10px;">
       <br>
       <button type="submit" style="margin-top: 15px;">Add Dish!</button>
@@ -44,6 +51,7 @@
       const name = document.getElementById('dishName').value;
       const emojiInput = document.getElementById('dishEmoji').value;
       const category = document.getElementById('dishCategory').value;
+      const budget = document.getElementById('dishBudget').value;
       
       const allEmojis = "🍔🍟🍕🌭🥪🌮🌯🫔🥙🧆🥚🍳🥘🍲🥣🥗🍿🧈🧂🥫🍱🍘🍙🍚🍛🍜🍝🍠🍢🍣🍤🍥🥮🍡🥟🥠🥡🦀🦞🦐🦑🦪🍦🍧🍨🍩🍪🎂🍰🧁🥧🍫🍬🍭🍮🍯🍼🥛☕🫖🍵🍶🍾🍷🍸🍹🍺🍻🥂🥃🥤🧋🧃🧉🧊🥢🍽🍴🥄🔪🏺🍏🍎🍐🍊🍋🍌🍉🍇🍓🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🥦🥬🥒🌶🫑🌽🥕🧄🧅🥔🍠🥐🥯🍞🥖🥨🧀🍗🍖🥩🍤🥞🧇🍄🥜🌰🥓😋😝🤪🤩🥳🤠😇🙃🥸😎🤓🧐🥰😘😛😜🤨😍✨🔥🌟💫💥🎉🎊🎈";
       const foodEmojis = Array.from(allEmojis);
@@ -82,7 +90,7 @@
         headers: {
           'Content-Type': 'text/plain;charset=utf-8',
         },
-        body: JSON.stringify({ action: 'add_dish', name: name, emoji: emoji, category: category })
+        body: JSON.stringify({ action: 'add_dish', name: name, emoji: emoji, category: category, budget: budget })
       }).then(() => {
         greetingDiv.innerText = `Yum! Added ${name} to your global database!`;
         this.reset();

@@ -9,50 +9,107 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
+  
+  :root {
+    --bg-gradient: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #fff;
+    --select-bg: #fff;
+    --select-color: #333;
+    --btn-bg: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    --btn-color: #333;
+    --border-color: rgba(255, 255, 255, 0.2);
+    --shadow-color: rgba(31, 38, 135, 0.37);
+  }
+
+  body.dark-mode {
+    --bg-gradient: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #e94560);
+    --card-bg: rgba(0, 0, 0, 0.5);
+    --text-color: #e0e0e0;
+    --select-bg: #333;
+    --select-color: #eee;
+    --btn-bg: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+    --btn-color: #fff;
+    --border-color: rgba(255, 255, 255, 0.05);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+  }
+
   body {
     margin: 0; padding: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; min-height: 100vh;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background: var(--bg-gradient);
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
-    color: #fff; overflow: hidden;
+    color: var(--text-color); overflow: hidden;
+    transition: background 0.5s ease;
   }
   @keyframes gradientBG {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+
+  /* Dark Mode Toggle */
+  #darkModeToggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    transition: transform 0.3s;
+  }
+  #darkModeToggle:hover { transform: scale(1.1); }
+
   .card {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border-color);
     border-radius: 30px;
     padding: 3rem 2rem;
     text-align: center;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    box-shadow: 0 8px 32px 0 var(--shadow-color);
     max-width: 90%; width: 500px; z-index: 10;
   }
   h1 {
     font-size: 2.5rem; margin-top: 0; margin-bottom: 1rem;
     line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   }
+  
+  .filters {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+
   select {
     padding: 8px 12px; font-size: 1.1rem; border-radius: 10px; border: none;
-    margin-bottom: 1.5rem; cursor: pointer; outline: none; background: #fff; color: #333;
+    cursor: pointer; outline: none; background: var(--select-bg); color: var(--select-color);
+    transition: background 0.3s, color 0.3s;
   }
-  button {
+
+  button.spin-btn {
     font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
-    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-    color: #333; font-weight: 800; cursor: pointer;
+    background: var(--btn-bg);
+    color: var(--btn-color); font-weight: 800; cursor: pointer;
     box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px;
   }
-  button:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 25px rgba(0,0,0,0.3); }
-  button:active { transform: translateY(2px); }
+  button.spin-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 25px rgba(0,0,0,0.3); }
+  button.spin-btn:active { transform: translateY(2px); }
+  
   .btn-icon { animation: spin 2s linear infinite; display: inline-block; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
+  
   #result {
     font-size: 3rem; margin-top: 1.5rem; font-weight: 800;
     min-height: 150px; display: flex; flex-direction: column;
@@ -62,50 +119,86 @@
   .dish-emoji { font-size: 5rem; margin-top: 10px; }
   .winner-anim { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+  
+  .action-btns { margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .maps-btn {
-    display: inline-block; margin-top: 15px; padding: 10px 25px;
+    display: inline-block; padding: 10px 20px;
     background: #ea4335; color: white; border-radius: 25px; text-decoration: none;
-    font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    animation: bounceIn 1s ease; transition: 0.3s;
+    font-size: 1rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    animation: bounceIn 1s ease; transition: 0.3s; cursor: pointer; border: none;
   }
   .maps-btn:hover { background: #d33828; transform: scale(1.05); }
-  .nav-links a { color: #fff; text-decoration: none; font-weight: bold; margin: 0 10px; opacity: 0.9; }
+  .maps-btn.whatsapp { background: #25D366; }
+  .maps-btn.whatsapp:hover { background: #1ebe56; }
+  .maps-btn.blacklist { background: #333; }
+  .maps-btn.blacklist:hover { background: #000; }
+
+  .nav-links a { color: var(--text-color); text-decoration: none; font-weight: bold; margin: 0 10px; opacity: 0.9; }
   .nav-links a:hover { text-decoration: underline; opacity: 1; }
+  
   .floating-icon { position: absolute; opacity: 0.2; font-size: 3rem; animation: floatUp 10s linear infinite; z-index: 1; }
   @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0.8; } 100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; } }
 </style>
 </head>
 <body>
+  
+  <!-- Dark Mode Toggle -->
+  <button id="darkModeToggle" onclick="toggleDarkMode()">🌙</button>
+
   <div class="card">
     <h1>Apa nak makan harini?</h1>
     
-    <select id="categoryFilter">
-      <option value="Any">All Categories</option>
-      <option value="Favorites">⭐ My Favorites Only</option>
-      <option value="Breakfast">Breakfast</option>
-      <option value="Lunch">Lunch</option>
-      <option value="Dinner">Dinner</option>
-      <option value="Dessert">Dessert</option>
-      <option value="Drinks">Drinks</option>
-      <option value="Snack">Snack</option>
-    </select>
+    <div class="filters">
+      <select id="categoryFilter">
+        <option value="Any">All Categories</option>
+        <option value="Favorites">⭐ My Favorites Only</option>
+        <option value="Breakfast">Breakfast</option>
+        <option value="Lunch">Lunch</option>
+        <option value="Dinner">Dinner</option>
+        <option value="Dessert">Dessert</option>
+        <option value="Drinks">Drinks</option>
+        <option value="Snack">Snack</option>
+      </select>
 
-    <br>
-    <button onclick="startRoulette()" id="spinBtn">
+      <select id="budgetFilter">
+        <option value="Any">Any Budget</option>
+        <option value="💲">💲 Murah</option>
+        <option value="💲💲">💲💲 Average</option>
+        <option value="💲💲💲">💲💲💲 Mahal</option>
+      </select>
+    </div>
+
+    <button onclick="startRoulette()" id="spinBtn" class="spin-btn">
       <span class="btn-icon">🍽️</span> Pilih untuk saya!
     </button>
     
     <div id="result">
       <div style="font-size: 1.5rem; font-weight: normal; opacity: 0.8;">Click to spin!</div>
     </div>
-    <div id="mapsContainer" style="display: none;"></div>
+    <div id="actionContainer" class="action-btns" style="display: none;"></div>
 
     <div class="nav-links" style="margin-top: 2rem;">
       <a href="list.html">📸 Gallery & Leaderboard</a><br><br>
       <a href="add.html">➕ Add Dish</a> | <a href="review.html">⭐ Review a Dish</a> | <a href="view.html">🔒 Admin</a>
     </div>
+  </div>
 
   <script>
+    // Dark Mode Logic
+    if (localStorage.getItem('dark_mode') === 'true') {
+      document.body.classList.add('dark-mode');
+      document.getElementById('darkModeToggle').innerText = '☀️';
+    }
+
+    function toggleDarkMode() {
+      const body = document.body;
+      body.classList.toggle('dark-mode');
+      const isDark = body.classList.contains('dark-mode');
+      localStorage.setItem('dark_mode', isDark);
+      document.getElementById('darkModeToggle').innerText = isDark ? '☀️' : '🌙';
+    }
+
+    // Audio Context
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playTickSound() {
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -141,6 +234,48 @@
       .then(data => { if (data && data.length > 0) allDishes = data; })
       .catch(err => console.error("Error loading dishes:", err));
 
+    // Blacklist Logic
+    function blacklistDish(dishName) {
+      let bl = JSON.parse(localStorage.getItem('nakmakan_blacklist') || '{}');
+      // Set expiry to 24 hours from now
+      bl[dishName] = Date.now() + (24 * 60 * 60 * 1000);
+      localStorage.setItem('nakmakan_blacklist', JSON.stringify(bl));
+      alert(`🚫 ${dishName} won't show up for the next 24 hours! Spin again.`);
+      document.getElementById('actionContainer').style.display = 'none';
+      document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem; font-weight: normal; opacity: 0.8;">Click to spin again!</div>';
+    }
+
+    function getValidDishes() {
+      // 1. Clean up expired blacklist
+      let bl = JSON.parse(localStorage.getItem('nakmakan_blacklist') || '{}');
+      let now = Date.now();
+      for (let key in bl) {
+        if (bl[key] < now) delete bl[key];
+      }
+      localStorage.setItem('nakmakan_blacklist', JSON.stringify(bl));
+
+      // 2. Filter Dishes
+      const cat = document.getElementById('categoryFilter').value;
+      const budget = document.getElementById('budgetFilter').value;
+      const favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
+
+      return allDishes.filter(d => {
+        // Check Blacklist
+        if (bl[d.name]) return false;
+        
+        // Check Favorites
+        if (cat === 'Favorites' && !favs.includes(d.name)) return false;
+        
+        // Check Category
+        if (cat !== 'Favorites' && cat !== 'Any' && d.category !== cat && d.category !== 'Any') return false;
+
+        // Check Budget
+        if (budget !== 'Any' && d.budget !== budget && d.budget !== 'Any' && d.budget !== '') return false;
+
+        return true;
+      });
+    }
+
     function startRoulette() {
       if (isSpinning) return;
       if (allDishes.length === 0) {
@@ -148,23 +283,16 @@
         return;
       }
 
-      const cat = document.getElementById('categoryFilter').value;
-      let validDishes = allDishes;
+      const validDishes = getValidDishes();
       
-      if (cat === 'Favorites') {
-        const favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
-        validDishes = allDishes.filter(d => favs.includes(d.name));
-      } else if (cat !== 'Any') {
-        validDishes = allDishes.filter(d => d.category === cat || d.category === 'Any');
-      }
       if (validDishes.length === 0) {
-        document.getElementById('result').innerHTML = `<div style="font-size: 1.5rem;">No dishes in category: ${cat} 😢</div>`;
+        document.getElementById('result').innerHTML = `<div style="font-size: 1.5rem;">No dishes match your filters! 😢 (Or they are all blacklisted)</div>`;
         return;
       }
 
       isSpinning = true;
       document.getElementById('spinBtn').style.opacity = '0.5';
-      document.getElementById('mapsContainer').style.display = 'none';
+      document.getElementById('actionContainer').style.display = 'none';
       const resultDiv = document.getElementById('result');
 
       let ticks = 0;
@@ -181,26 +309,25 @@
 
         ticks++;
         if (ticks < maxTicks) {
-          delay += 10; // Slow down gradually
+          delay += 10;
           setTimeout(spinStep, delay);
         } else {
           // Winner!
           playWinSound();
           const winner = validDishes[Math.floor(Math.random() * validDishes.length)];
           resultDiv.innerHTML = `
-            <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${winner.name}</div>
+            <div class="dish-name winner-anim" style="color: var(--text-color); font-size: 3.5rem;">${winner.name}</div>
             <div class="dish-emoji winner-anim">${winner.emoji}</div>
           `;
           
-          
-          document.getElementById('mapsContainer').innerHTML = `
-            <a href="https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}" target="_blank" class="maps-btn">📍 Find ${winner.name} Nearby</a>
-            <br>
-            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent('The magic wheel has spoken! We are having *' + winner.name + '* ' + winner.emoji + ' tonight! Who is in? \n\nSpin your own: https://unknown-user-status.github.io/nak-makan-apa/')}" target="_blank" class="maps-btn" style="background:#25D366; margin-top:10px;">💬 Invite via WhatsApp</a>
+          document.getElementById('actionContainer').innerHTML = `
+            <a href="https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}" target="_blank" class="maps-btn">📍 Find Nearby</a>
+            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent('The magic wheel has spoken! We are having *' + winner.name + '* ' + winner.emoji + ' tonight! Who is in? \n\nSpin your own: https://unknown-user-status.github.io/nak-makan-apa/')}" target="_blank" class="maps-btn whatsapp">💬 Invite</a>
+            <button onclick="blacklistDish('${winner.name}')" class="maps-btn blacklist">Not Today 🚫</button>
           `;
-          document.getElementById('mapsContainer').style.display = 'block';
+          document.getElementById('actionContainer').style.display = 'flex';
 
-          // Tell the database to increment the pick count!
+          // Increment Pick Count
           fetch(WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
