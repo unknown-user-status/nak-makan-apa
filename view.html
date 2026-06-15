@@ -37,6 +37,11 @@
       window.location.href = "login.html";
     });
 
+    // Force reload on "Back" button
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) { window.location.reload(); }
+    });
+
     async function loadData() {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -46,7 +51,7 @@
 
       const params = new URLSearchParams({ action: "get_admin_data", token });
       try {
-        const res = await fetch(URL + "?" + params.toString());
+        const res = await fetch(URL + "?" + params.toString(), { cache: 'no-store' });
         const data = await res.json();
 
         if (data.ok === false) {

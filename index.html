@@ -233,11 +233,16 @@
     let allDishes = [];
     let isSpinning = false;
 
-    // Fetch dishes
-    fetch(WEB_APP_URL)
+    // Fetch dishes (always get fresh data, no cache)
+    fetch(WEB_APP_URL, { cache: 'no-store' })
       .then(response => response.json())
       .then(data => { if (data && data.length > 0) allDishes = data; })
       .catch(err => console.error("Error loading dishes:", err));
+
+    // Force reload if user clicks the browser "Back" button
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) { window.location.reload(); }
+    });
 
     // Blacklist Logic
     function blacklistDish(dishName) {

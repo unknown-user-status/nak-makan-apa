@@ -52,8 +52,14 @@
   <script>
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
     
-    fetch(WEB_APP_URL)
-      .then(r => r.json())
+    // Force reload if user clicks the browser "Back" button
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) { window.location.reload(); }
+    });
+
+    // Fetch latest data (no cache)
+    fetch(WEB_APP_URL, { cache: 'no-store' })
+      .then(response => response.json())
       .then(data => {
         document.getElementById('loading').style.display = 'none';
         
