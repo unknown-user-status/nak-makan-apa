@@ -150,6 +150,30 @@
     50% { transform: scale(1.1); }
     100% { transform: scale(1); opacity: 1; }
   }
+
+  /* Floating AI Chef */
+  .chef-fab {
+    position: fixed; bottom: 30px; right: 30px;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, #bb86fc 0%, #7c4dff 100%);
+    color: white; font-size: 2rem; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 25px rgba(124, 77, 255, 0.5);
+    cursor: pointer; z-index: 1000; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .chef-fab:hover { transform: scale(1.1) rotate(10deg); }
+  
+  .chef-window {
+    position: fixed; bottom: 100px; right: 30px;
+    width: 300px; background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;
+    padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    z-index: 999; display: none; flex-direction: column; gap: 15px;
+    animation: slideUp 0.3s ease-out;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body>
@@ -186,11 +210,6 @@
       🎰 Spin the Wheel!
     </button>
 
-    <div id="aiChef" style="margin-top: 1rem; width: 100%; display: flex; justify-content: center; gap: 10px;">
-      <input type="text" id="chefInput" placeholder="🤖 Tell the chef what you're craving..." style="width: 250px; padding: 12px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); background: var(--select-bg); color: var(--text-color); outline: none; font-family: inherit;">
-      <button onclick="askChef()" style="background: linear-gradient(135deg, #bb86fc 0%, #7c4dff 100%); color: white; border: none; padding: 0 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s;">Ask</button>
-    </div>
-
     <div id="result">
       <div style="font-size: 1.5rem; opacity: 0.8;">Press Spin or Ask the Chef!</div>
     </div>
@@ -200,6 +219,19 @@
       <a href="list.html">📸 Gallery & Leaderboard</a><br><br>
       <a href="swipe.html" style="color: #ff9a9e; font-weight:800;">🔥 Swipe Mode</a> | <a href="add.html">➕ Add Dish</a> | <a href="review.html">⭐ Review a Dish</a> | <a href="room.html">📡 Live Room</a> | <a href="view.html">🔒 Admin</a>
     </div>
+  </div>
+
+  <!-- Floating AI Chef UI -->
+  <div class="chef-fab" onclick="toggleChef()">🤖</div>
+  <div class="chef-window" id="chefWindow">
+    <div style="font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+      🤖 The Virtual Chef
+    </div>
+    <div style="font-size: 0.9rem; opacity: 0.8;">
+      Tell me what you are craving, or what your budget is, and I'll spin the wheel for you!
+    </div>
+    <input type="text" id="chefInput" placeholder="e.g., Nasi, Murah, Western..." style="width: 100%; padding: 12px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); background: var(--select-bg); color: var(--text-color); outline: none; font-family: inherit;">
+    <button onclick="askChef()" style="background: linear-gradient(135deg, #bb86fc 0%, #7c4dff 100%); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s; width: 100%;">Ask Chef</button>
   </div>
 
   <script>
@@ -212,6 +244,16 @@
     function toggleTheme() {
       document.body.classList.toggle('dark-mode');
       localStorage.setItem('nakmakan_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
+    function toggleChef() {
+      const w = document.getElementById('chefWindow');
+      if (w.style.display === 'flex') {
+        w.style.display = 'none';
+      } else {
+        w.style.display = 'flex';
+        document.getElementById('chefInput').focus();
+      }
     }
 
     let allDishes = [];
@@ -323,6 +365,8 @@
         const winner = matches[Math.floor(Math.random() * matches.length)];
         
         document.getElementById('chefInput').value = '';
+        document.getElementById('chefWindow').style.display = 'none'; // Close chat window
+        
         isSpinning = true;
         document.getElementById('spinBtn').style.opacity = '0.5';
         document.getElementById('actionContainer').style.display = 'none';
