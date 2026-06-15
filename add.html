@@ -29,21 +29,25 @@
       e.preventDefault();
       const name = document.getElementById('dishName').value;
       
-      let dishes = JSON.parse(localStorage.getItem('myDishes')) || [
-        { name: "Nasi Lemak", emoji: "🍚" }, { name: "Roti Canai", emoji: "🥞" },
-        { name: "Laksa", emoji: "🍜" }, { name: "Satay", emoji: "🍢" },
-        { name: "Mee Goreng", emoji: "🍝" }, { name: "Cendol", emoji: "🍧" },
-        { name: "Rendang", emoji: "🍛" }, { name: "Teh Tarik", emoji: "☕" },
-        { name: "Mee Rebus", emoji: "🍲" }, { name: "Nasi Kerabu", emoji: "🥗" }
-      ];
-      
       const foodEmojis = ["😋","🍽️","🥣","🔥","✨","🥘"];
       const randomEmoji = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
-      dishes.push({ name: name, emoji: randomEmoji });
-      localStorage.setItem('myDishes', JSON.stringify(dishes));
-
-      document.getElementById('greeting').innerText = `Yum! Added ${name} to your list!`;
-      this.reset();
+      
+      const greetingDiv = document.getElementById('greeting');
+      greetingDiv.innerText = 'Saving to database... ⏳';
+      
+      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxeBXwhwev77MB1h6pwJ170qG1jiHGk3oCh0D3OoaafkSv0NZI1M8H67lYSukwmDejr/exec';
+      
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ name: name, emoji: randomEmoji })
+      }).then(() => {
+        greetingDiv.innerText = `Yum! Added ${name} to your global database!`;
+        this.reset();
+      }).catch(err => {
+        greetingDiv.innerText = `Error saving ${name}.`;
+        console.error(err);
+      });
     });
   </script>
 </body>

@@ -94,19 +94,24 @@
       osc.stop(audioCtx.currentTime + 0.15);
     }
 
-    const defaultDishes = [
-      { name: "Nasi Lemak", emoji: "🍚" }, { name: "Roti Canai", emoji: "🥞" },
-      { name: "Laksa", emoji: "🍜" }, { name: "Satay", emoji: "🍢" },
-      { name: "Mee Goreng", emoji: "🍝" }, { name: "Cendol", emoji: "🍧" },
-      { name: "Rendang", emoji: "🍛" }, { name: "Teh Tarik", emoji: "☕" },
-      { name: "Mee Rebus", emoji: "🍲" }, { name: "Nasi Kerabu", emoji: "🥗" }
-    ];
-    let dishes = JSON.parse(localStorage.getItem('myDishes'));
-    if (!dishes) {
-      dishes = defaultDishes;
-      localStorage.setItem('myDishes', JSON.stringify(dishes));
-    }
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxeBXwhwev77MB1h6pwJ170qG1jiHGk3oCh0D3OoaafkSv0NZI1M8H67lYSukwmDejr/exec';
+    let dishes = [];
+
+    // Fetch dishes from Google Sheets on load
+    fetch(WEB_APP_URL)
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          dishes = data;
+        }
+      })
+      .catch(err => console.error("Error loading dishes:", err));
+
     function pickDish() {
+      if (dishes.length === 0) {
+        document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem; margin-top: 20px;">Loading dishes... Please wait! ⏳</div>';
+        return;
+      }
       playPopSound();
       const random = dishes[Math.floor(Math.random() * dishes.length)];
       const resultDiv = document.getElementById('result');
