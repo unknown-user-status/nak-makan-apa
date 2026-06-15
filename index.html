@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apa nak makan tonight?</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #fff; overflow: hidden;
+  }
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    max-width: 90%; width: 450px; z-index: 10;
+  }
+  h1 {
+    font-size: 2.5rem; margin-top: 0; margin-bottom: 2rem;
+    line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  button {
+    font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    color: #333; font-weight: 800; cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px;
+  }
+  button:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 25px rgba(0,0,0,0.3);
+  }
+  button:active { transform: translateY(2px); }
+  .btn-icon { animation: spin 2s linear infinite; display: inline-block; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  #result {
+    font-size: 3rem; margin-top: 2rem; font-weight: 800;
+    min-height: 100px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .dish-name { text-shadow: 2px 2px 8px rgba(0,0,0,0.4); animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  .dish-emoji { font-size: 5rem; animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin-top: 10px; }
+  @keyframes slideUp { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+  .floating-icon { position: absolute; opacity: 0.2; font-size: 3rem; animation: floatUp 10s linear infinite; z-index: 1; }
+  @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0.8; } 100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Apa nak makan tonight?</h1>
+    <button onclick="pickDish()">
+      <span class="btn-icon">🍽️</span> Pilih untuk saya!
+    </button>
+    <div id="result"></div>
+    <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+      Created by <a href="https://github.com/unknown-user-status" target="_blank" style="color: #fff; text-decoration: underline;">unknown-user-status</a>
+    </div>
+  </div>
+  <script>
+    const dishes = [
+      { name: "Nasi Lemak", emoji: "🍚" }, { name: "Roti Canai", emoji: "🥞" },
+      { name: "Laksa", emoji: "🍜" }, { name: "Satay", emoji: "🍢" },
+      { name: "Mee Goreng", emoji: "🍝" }, { name: "Cendol", emoji: "🍧" },
+      { name: "Rendang", emoji: "🍛" }, { name: "Teh Tarik", emoji: "☕" },
+      { name: "Mee Rebus", emoji: "🍲" }, { name: "Nasi Kerabu", emoji: "🥗" }
+    ];
+    function pickDish() {
+      const random = dishes[Math.floor(Math.random() * dishes.length)];
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
+      setTimeout(() => {
+        resultDiv.innerHTML = `
+          <div class="dish-name">${random.name}</div>
+          <div class="dish-emoji">${random.emoji}</div>
+        `;
+      }, 50);
+    }
+    // Create floating background icons
+    const emojis = ["🍔","🍕","🍟","🍣","🍱","🍛","🍜","🍝","🍤","🥟"];
+    for(let i=0; i<15; i++) {
+      const el = document.createElement('div');
+      el.className = 'floating-icon';
+      el.innerText = emojis[Math.floor(Math.random()*emojis.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.animationDelay = (Math.random() * 10) + 's';
+      el.style.animationDuration = (10 + Math.random() * 10) + 's';
+      el.style.fontSize = (2 + Math.random() * 3) + 'rem';
+      document.body.appendChild(el);
+    }
+  </script>
+</body>
+</html>
