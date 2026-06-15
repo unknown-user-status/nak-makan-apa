@@ -30,11 +30,15 @@
     padding: 3rem 2rem;
     text-align: center;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    max-width: 90%; width: 450px; z-index: 10;
+    max-width: 90%; width: 500px; z-index: 10;
   }
   h1 {
-    font-size: 2.5rem; margin-top: 0; margin-bottom: 2rem;
+    font-size: 2.5rem; margin-top: 0; margin-bottom: 1rem;
     line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  select {
+    padding: 8px 12px; font-size: 1.1rem; border-radius: 10px; border: none;
+    margin-bottom: 1.5rem; cursor: pointer; outline: none; background: #fff; color: #333;
   }
   button {
     font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
@@ -43,22 +47,28 @@
     box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px;
   }
-  button:hover {
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 15px 25px rgba(0,0,0,0.3);
-  }
+  button:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 25px rgba(0,0,0,0.3); }
   button:active { transform: translateY(2px); }
   .btn-icon { animation: spin 2s linear infinite; display: inline-block; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
   #result {
-    font-size: 3rem; margin-top: 2rem; font-weight: 800;
-    min-height: 100px; display: flex; flex-direction: column;
+    font-size: 3rem; margin-top: 1.5rem; font-weight: 800;
+    min-height: 150px; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
   }
-  .dish-name { text-shadow: 2px 2px 8px rgba(0,0,0,0.4); animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-  .dish-emoji { font-size: 5rem; animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin-top: 10px; }
-  @keyframes slideUp { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  .dish-name { text-shadow: 2px 2px 8px rgba(0,0,0,0.4); }
+  .dish-emoji { font-size: 5rem; margin-top: 10px; }
+  .winner-anim { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+  .maps-btn {
+    display: inline-block; margin-top: 15px; padding: 10px 25px;
+    background: #ea4335; color: white; border-radius: 25px; text-decoration: none;
+    font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    animation: bounceIn 1s ease; transition: 0.3s;
+  }
+  .maps-btn:hover { background: #d33828; transform: scale(1.05); }
+  .nav-links a { color: #fff; text-decoration: none; font-weight: bold; margin: 0 10px; opacity: 0.9; }
+  .nav-links a:hover { text-decoration: underline; opacity: 1; }
   .floating-icon { position: absolute; opacity: 0.2; font-size: 3rem; animation: floatUp 10s linear infinite; z-index: 1; }
   @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0.8; } 100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; } }
 </style>
@@ -66,64 +76,136 @@
 <body>
   <div class="card">
     <h1>Apa nak makan tonight?</h1>
-    <button onclick="pickDish()">
+    
+    <select id="categoryFilter">
+      <option value="Any">All Categories</option>
+      <option value="Breakfast">Breakfast</option>
+      <option value="Lunch">Lunch</option>
+      <option value="Dinner">Dinner</option>
+      <option value="Dessert">Dessert</option>
+      <option value="Drinks">Drinks</option>
+      <option value="Snack">Snack</option>
+    </select>
+
+    <br>
+    <button onclick="startRoulette()" id="spinBtn">
       <span class="btn-icon">🍽️</span> Pilih untuk saya!
     </button>
-    <div id="result"></div>
-    <div style="margin-top: 1.5rem;">
-      <a href="add.html" style="color: #fff; text-decoration: underline; font-weight: bold;">+ Add New Dish</a>
+    
+    <div id="result">
+      <div style="font-size: 1.5rem; font-weight: normal; opacity: 0.8;">Click to spin!</div>
     </div>
-    <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
-      Created by <a href="https://github.com/unknown-user-status" target="_blank" style="color: #fff; text-decoration: underline;">unknown-user-status</a>
+    <div id="mapsContainer" style="display: none;"></div>
+
+    <div class="nav-links" style="margin-top: 2rem;">
+      <a href="list.html">📸 Gallery & Leaderboard</a><br><br>
+      <a href="add.html">➕ Add Dish</a> | <a href="review.html">⭐ Review a Dish</a>
     </div>
   </div>
+
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playPopSound() {
+    function playTickSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+    function playWinSound() {
       if (audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
       gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
 
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-    let dishes = [];
+    let allDishes = [];
+    let isSpinning = false;
 
-    // Fetch dishes from Google Sheets on load
+    // Fetch dishes
     fetch(WEB_APP_URL)
       .then(response => response.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          dishes = data;
-        }
-      })
+      .then(data => { if (data && data.length > 0) allDishes = data; })
       .catch(err => console.error("Error loading dishes:", err));
 
-    function pickDish() {
-      if (dishes.length === 0) {
-        document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem; margin-top: 20px;">Loading dishes... Please wait! ⏳</div>';
+    function startRoulette() {
+      if (isSpinning) return;
+      if (allDishes.length === 0) {
+        document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem;">Loading dishes... Please wait! ⏳</div>';
         return;
       }
-      playPopSound();
-      const random = dishes[Math.floor(Math.random() * dishes.length)];
+
+      const cat = document.getElementById('categoryFilter').value;
+      let validDishes = allDishes;
+      if (cat !== 'Any') {
+        validDishes = allDishes.filter(d => d.category === cat || d.category === 'Any');
+      }
+      if (validDishes.length === 0) {
+        document.getElementById('result').innerHTML = `<div style="font-size: 1.5rem;">No dishes in category: ${cat} 😢</div>`;
+        return;
+      }
+
+      isSpinning = true;
+      document.getElementById('spinBtn').style.opacity = '0.5';
+      document.getElementById('mapsContainer').style.display = 'none';
       const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '';
-      setTimeout(() => {
+
+      let ticks = 0;
+      const maxTicks = 30;
+      let delay = 50;
+
+      function spinStep() {
+        playTickSound();
+        const random = validDishes[Math.floor(Math.random() * validDishes.length)];
         resultDiv.innerHTML = `
-          <div class="dish-name">${random.name}</div>
-          <div class="dish-emoji">${random.emoji}</div>
+          <div class="dish-name" style="opacity: 0.7;">${random.name}</div>
+          <div class="dish-emoji" style="opacity: 0.7; font-size: 4rem;">${random.emoji}</div>
         `;
-      }, 50);
+
+        ticks++;
+        if (ticks < maxTicks) {
+          delay += 10; // Slow down gradually
+          setTimeout(spinStep, delay);
+        } else {
+          // Winner!
+          playWinSound();
+          const winner = validDishes[Math.floor(Math.random() * validDishes.length)];
+          resultDiv.innerHTML = `
+            <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${winner.name}</div>
+            <div class="dish-emoji winner-anim">${winner.emoji}</div>
+          `;
+          
+          document.getElementById('mapsContainer').innerHTML = `
+            <a href="https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}" target="_blank" class="maps-btn">📍 Find ${winner.name} Nearby</a>
+          `;
+          document.getElementById('mapsContainer').style.display = 'block';
+
+          // Tell the database to increment the pick count!
+          fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'increment_pick', name: winner.name })
+          }).catch(e => console.log('Increment failed quietly'));
+
+          isSpinning = false;
+          document.getElementById('spinBtn').style.opacity = '1';
+        }
+      }
+      spinStep();
     }
-    // Create floating background icons
+
+    // Floating icons
     const emojis = ["🍔","🍕","🍟","🍣","🍱","🍛","🍜","🍝","🍤","🥟"];
     for(let i=0; i<15; i++) {
       const el = document.createElement('div');
