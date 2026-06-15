@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apa nak makan tonight?</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
@@ -79,6 +81,7 @@
     
     <select id="categoryFilter">
       <option value="Any">All Categories</option>
+      <option value="Favorites">⭐ My Favorites Only</option>
       <option value="Breakfast">Breakfast</option>
       <option value="Lunch">Lunch</option>
       <option value="Dinner">Dinner</option>
@@ -148,7 +151,11 @@
 
       const cat = document.getElementById('categoryFilter').value;
       let validDishes = allDishes;
-      if (cat !== 'Any') {
+      
+      if (cat === 'Favorites') {
+        const favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
+        validDishes = allDishes.filter(d => favs.includes(d.name));
+      } else if (cat !== 'Any') {
         validDishes = allDishes.filter(d => d.category === cat || d.category === 'Any');
       }
       if (validDishes.length === 0) {
@@ -186,8 +193,11 @@
             <div class="dish-emoji winner-anim">${winner.emoji}</div>
           `;
           
+          
           document.getElementById('mapsContainer').innerHTML = `
             <a href="https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}" target="_blank" class="maps-btn">📍 Find ${winner.name} Nearby</a>
+            <br>
+            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent('The magic wheel has spoken! We are having *' + winner.name + '* ' + winner.emoji + ' tonight! Who is in? \n\nSpin your own: https://unknown-user-status.github.io/nak-makan-apa/')}" target="_blank" class="maps-btn" style="background:#25D366; margin-top:10px;">💬 Invite via WhatsApp</a>
           `;
           document.getElementById('mapsContainer').style.display = 'block';
 
@@ -216,6 +226,12 @@
       el.style.animationDuration = (10 + Math.random() * 10) + 's';
       el.style.fontSize = (2 + Math.random() * 3) + 'rem';
       document.body.appendChild(el);
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
     }
   </script>
 </body>

@@ -1,0 +1,16 @@
+{
+  "name": "Nak Makan Apa?",
+  "short_name": "NakMakanApa",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ee7752",
+  "theme_color": "#ee7752",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

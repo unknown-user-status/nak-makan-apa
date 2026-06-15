@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gallery & Leaderboard</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
@@ -83,15 +85,24 @@
 
         // Build Gallery
         const gallery = document.getElementById('gallery');
+        const favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
+
         data.forEach(dish => {
-          // Parse reviews
           let revHtml = '';
           if(dish.reviews) {
             const revList = dish.reviews.split(' | ');
             revHtml = `<div class="card-reviews">` + revList.slice(-2).join('<br>') + `</div>`; // show last 2
           }
+          const isFav = favs.includes(dish.name);
+          const safeName = dish.name.replace(/'/g, "\\'");
+          
           gallery.innerHTML += `
             <div class="card">
+              <div style="text-align: right;">
+                <button onclick="toggleFav(this, '${safeName}')" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0; margin:0; outline:none;">
+                  ${isFav ? '❤️' : '🤍'}
+                </button>
+              </div>
               <div class="card-emoji">${dish.emoji}</div>
               <div class="card-name">${dish.name}</div>
               <div class="card-cat">${dish.category}</div>
@@ -101,6 +112,24 @@
           `;
         });
       });
+
+    function toggleFav(btn, name) {
+      let favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
+      if (favs.includes(name)) {
+        favs = favs.filter(n => n !== name);
+        btn.innerText = '🤍';
+      } else {
+        favs.push(name);
+        btn.innerText = '❤️';
+      }
+      localStorage.setItem('nakmakan_favs', JSON.stringify(favs));
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
   </script>
 </body>
 </html>
