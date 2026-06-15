@@ -46,7 +46,10 @@
 
       <input type="text" id="dishComment" placeholder="Write a short comment..." required maxlength="50">
       
-      <button type="submit">Submit Review!</button>
+      <label style="margin-top:15px; display:block; font-size:0.9rem; opacity:0.8; text-align:left;">Attach a Photo (Optional):</label>
+      <input type="file" id="dishPhoto" accept="image/*" style="background: rgba(0,0,0,0.2); color:#fff; padding: 10px; margin-top:5px;">
+      
+      <button type="submit" style="margin-top:20px;">Submit Review!</button>
     </form>
     <div id="status" style="margin-top:15px; font-weight:bold;"></div>
     <br>
@@ -66,18 +69,28 @@
         });
       });
 
-    document.getElementById('reviewForm').addEventListener('submit', (e) => {
+    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('dishSelect').value;
       const rating = document.getElementById('dishRating').value;
       const comment = document.getElementById('dishComment').value;
+      const photoFile = document.getElementById('dishPhoto').files[0];
       
       document.getElementById('status').innerText = "Submitting review... ⏳";
+      
+      let photoBase64 = null;
+      if (photoFile) {
+        photoBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(photoFile);
+        });
+      }
       
       fetch(WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'add_review', name: name, rating: rating, comment: comment })
+        body: JSON.stringify({ action: 'add_review', name: name, rating: rating, comment: comment, photoBase64: photoBase64 })
       }).then(() => {
         document.getElementById('status').innerText = `✅ Review saved for ${name}!`;
         e.target.reset();

@@ -166,6 +166,11 @@
         <option value="💲💲">💲💲 Average</option>
         <option value="💲💲💲">💲💲💲 Mahal</option>
       </select>
+
+      <label style="display:flex; align-items:center; gap:5px; cursor:pointer; background: var(--select-bg); color: var(--select-color); padding: 8px 12px; border-radius: 10px;">
+        <input type="checkbox" id="nearbyFilter">
+        📍 Nearby Only
+      </label>
     </div>
 
     <button onclick="startRoulette()" id="spinBtn" class="spin-btn">
@@ -276,7 +281,7 @@
       });
     }
 
-    function startRoulette() {
+    async function startRoulette() {
       if (isSpinning) return;
       if (allDishes.length === 0) {
         document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem;">Loading dishes... Please wait! ⏳</div>';
@@ -288,6 +293,24 @@
       if (validDishes.length === 0) {
         document.getElementById('result').innerHTML = `<div style="font-size: 1.5rem;">No dishes match your filters! 😢 (Or they are all blacklisted)</div>`;
         return;
+      }
+
+      const nearbyCheck = document.getElementById('nearbyFilter').checked;
+      let userLat = null;
+      let userLng = null;
+      
+      if (nearbyCheck) {
+        document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem;">Getting your location... 📍</div>';
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+          });
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+        } catch (e) {
+          document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem;">❌ Please enable GPS to use "Nearby Only"!</div>';
+          return;
+        }
       }
 
       isSpinning = true;
@@ -320,8 +343,13 @@
             <div class="dish-emoji winner-anim">${winner.emoji}</div>
           `;
           
+          let mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}`;
+          if (userLat && userLng) {
+            mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name)}/@${userLat},${userLng},15z`;
+          }
+
           document.getElementById('actionContainer').innerHTML = `
-            <a href="https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}" target="_blank" class="maps-btn">📍 Find Nearby</a>
+            <a href="${mapsUrl}" target="_blank" class="maps-btn">📍 Find Nearby</a>
             <a href="https://api.whatsapp.com/send?text=${encodeURIComponent('The magic wheel has spoken! We are having *' + winner.name + '* ' + winner.emoji + ' tonight! Who is in? \n\nSpin your own: https://unknown-user-status.github.io/nak-makan-apa/')}" target="_blank" class="maps-btn whatsapp">💬 Invite</a>
             <button onclick="blacklistDish('${winner.name}')" class="maps-btn blacklist">Not Today 🚫</button>
           `;

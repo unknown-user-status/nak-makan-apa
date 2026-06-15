@@ -43,11 +43,29 @@ function doPost(e) {
   }
   
   if (action === 'add_review') {
+    let photoUrl = '';
+    if (payload.photoBase64) {
+      try {
+        const splitBase = payload.photoBase64.split(',');
+        const type = splitBase[0].split(';')[0].replace('data:', '');
+        const byteCharacters = Utilities.base64Decode(splitBase[1]);
+        const blob = Utilities.newBlob(byteCharacters, type, "Review_" + Date.now() + ".jpg");
+        const file = DriveApp.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        photoUrl = file.getDownloadUrl();
+      } catch(e) {
+        photoUrl = '[Photo Upload Failed]';
+      }
+    }
+
     const data = sheet.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] === payload.name) {
         const currentReviews = data[i][4] ? data[i][4].toString() : '';
-        const newReview = payload.rating + "⭐: " + payload.comment;
+        let newReview = payload.rating + "⭐: " + payload.comment;
+        if (photoUrl && photoUrl !== '[Photo Upload Failed]') {
+          newReview += ` (Photo: <a href="${photoUrl}" target="_blank">View</a>)`;
+        }
         const updatedReviews = currentReviews ? currentReviews + ' | ' + newReview : newReview;
         sheet.getRange(i + 1, 5).setValue(updatedReviews);
         break;
@@ -145,6 +163,12 @@ function getAdminData(user) {
 function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function authorizeDrive() {
+  // Run this function once manually in the Apps Script Editor 
+  // so Google asks you for permission to save photos to your Google Drive!
+  DriveApp.getRootFolder();
 }
 
 function initAuth() {
