@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin View</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Poppins', sans-serif; background: #23a6d5; color: #fff; padding: 20px; max-width: 800px; margin: 0 auto; }
+  h1 { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+  button { padding: 8px 15px; font-size: 1rem; background: #ee7752; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+  ul { list-style-type: none; padding: 0; }
+  li { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+  .name { font-weight: bold; font-size: 1.2rem; }
+  .cat { font-size: 0.8rem; background: #ee7752; padding: 3px 8px; border-radius: 5px; margin-left: 10px; }
+  .reviews { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); color: #eef; font-size: 0.95rem; }
+  a.back { color: #fff; text-decoration: underline; display: block; margin-top: 30px; text-align: center; }
+</style>
+</head>
+<body>
+
+  <h1>
+    Secure Dashboard
+    <button id="logoutBtn">Log out</button>
+  </h1>
+  
+  <div id="content">Loading secure data...</div>
+
+  <a href="index.html" class="back">Back to App</a>
+
+  <script>
+    const URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    });
+
+    async function loadData() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const params = new URLSearchParams({ action: "get_admin_data", token });
+      try {
+        const res = await fetch(URL + "?" + params.toString());
+        const data = await res.json();
+
+        if (data.ok === false) {
+          localStorage.removeItem("token");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const content = document.getElementById('content');
+        if (!data.dishes || data.dishes.length === 0) {
+          content.innerHTML = "No submissions yet.";
+          return;
+        }
+
+        // Sort so reviewed items are top
+        data.dishes.sort((a, b) => {
+          if (a.reviews && !b.reviews) return -1;
+          if (!a.reviews && b.reviews) return 1;
+          return 0;
+        });
+
+        let html = "<ul>";
+        data.dishes.forEach(dish => {
+          let reviewsHTML = '';
+          if (dish.reviews) {
+            reviewsHTML = `<div class="reviews">💬 ${dish.reviews.split(' | ').join('<br>💬 ')}</div>`;
+          }
+          html += `
+            <li>
+              <span class="name">${dish.emoji} ${dish.name}</span>
+              <span class="cat">${dish.category} | Picked: ${dish.pickCount}</span>
+              ${reviewsHTML}
+            </li>
+          `;
+        });
+        html += "</ul>";
+        content.innerHTML = html;
+
+      } catch (err) {
+        document.getElementById('content').innerHTML = "❌ Network Error.";
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
