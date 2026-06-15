@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
   body {
     margin: 0; padding: 0; display: flex; flex-direction: column;
@@ -143,7 +144,14 @@
               document.getElementById('result').innerHTML = `
                 <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${data.winnerName}</div>
                 <div class="dish-emoji winner-anim">${data.winnerEmoji}</div>
+                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+                  <a href="https://food.grab.com/my/en/restaurants?search=${encodeURIComponent(data.winnerName)}" target="_blank" class="host-btn" style="background:#00B14F; color:white; text-decoration:none;">🟢 GrabFood</a>
+                  <a href="https://www.foodpanda.my/restaurants/new?q=${encodeURIComponent(data.winnerName)}" target="_blank" class="host-btn" style="background:#D70F64; color:white; text-decoration:none;">🐼 FoodPanda</a>
+                </div>
               `;
+
+              if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+              confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'] });
             }
           });
       }, 2000);

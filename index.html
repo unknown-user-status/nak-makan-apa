@@ -3,35 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Apa nak makan harini?</title>
+<title>Nak Makan Apa?</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   
   :root {
     --bg-gradient: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
     --card-bg: rgba(255, 255, 255, 0.1);
-    --text-color: #fff;
-    --select-bg: #fff;
-    --select-color: #333;
-    --btn-bg: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-    --btn-color: #333;
-    --border-color: rgba(255, 255, 255, 0.2);
-    --shadow-color: rgba(31, 38, 135, 0.37);
+    --text-color: #ffffff;
+    --btn-bg: #ffeb3b;
+    --btn-hover: #ffd600;
+    --select-bg: rgba(255, 255, 255, 0.2);
+    --select-color: #ffffff;
   }
 
   body.dark-mode {
-    --bg-gradient: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #e94560);
-    --card-bg: rgba(0, 0, 0, 0.5);
-    --text-color: #e0e0e0;
-    --select-bg: #333;
-    --select-color: #eee;
-    --btn-bg: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
-    --btn-color: #fff;
-    --border-color: rgba(255, 255, 255, 0.05);
-    --shadow-color: rgba(0, 0, 0, 0.5);
+    --bg-gradient: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --text-color: #f1f1f1;
+    --btn-bg: #bb86fc;
+    --btn-hover: #9965f4;
+    --select-bg: rgba(0, 0, 0, 0.5);
+    --select-color: #ffffff;
   }
 
   body {
@@ -41,47 +38,31 @@
     background: var(--bg-gradient);
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
-    color: var(--text-color); overflow: hidden;
+    color: var(--text-color);
     transition: background 0.5s ease;
   }
+
   @keyframes gradientBG {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
 
-  /* Dark Mode Toggle */
-  #darkModeToggle {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(5px);
-    transition: transform 0.3s;
+  .theme-toggle {
+    position: absolute; top: 20px; right: 20px;
+    background: var(--card-bg); border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50px; padding: 8px 15px; cursor: pointer; color: var(--text-color);
+    font-weight: bold; backdrop-filter: blur(5px);
   }
-  #darkModeToggle:hover { transform: scale(1.1); }
 
   .card {
-    background: var(--card-bg);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid var(--border-color);
-    border-radius: 30px;
-    padding: 3rem 2rem;
-    text-align: center;
-    box-shadow: 0 8px 32px 0 var(--shadow-color);
-    max-width: 90%; width: 500px; z-index: 10;
+    background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 30px;
+    padding: 3rem 2rem; text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    max-width: 90%; width: 500px;
   }
+
   h1 {
     font-size: 2.5rem; margin-top: 0; margin-bottom: 1rem;
     line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
@@ -133,16 +114,10 @@
 
   button.spin-btn {
     font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
-    background: var(--btn-bg);
-    color: var(--btn-color); font-weight: 800; cursor: pointer;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px;
+    background: var(--btn-bg); color: #333; font-weight: 800; cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: 0.3s; width: 100%;
   }
-  button.spin-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 25px rgba(0,0,0,0.3); }
-  button.spin-btn:active { transform: translateY(2px); }
-  
-  .btn-icon { animation: spin 2s linear infinite; display: inline-block; }
-  @keyframes spin { 100% { transform: rotate(360deg); } }
+  button.spin-btn:hover { background: var(--btn-hover); transform: scale(1.05); }
   
   #result {
     font-size: 3rem; margin-top: 1.5rem; font-weight: 800;
@@ -151,47 +126,47 @@
   }
   .dish-name { text-shadow: 2px 2px 8px rgba(0,0,0,0.4); }
   .dish-emoji { font-size: 5rem; margin-top: 10px; }
-  .winner-anim { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-  @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-  
-  .action-btns { margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-  .maps-btn {
-    display: inline-block; padding: 10px 20px;
-    background: #ea4335; color: white; border-radius: 25px; text-decoration: none;
-    font-size: 1rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    animation: bounceIn 1s ease; transition: 0.3s; cursor: pointer; border: none;
-  }
-  .maps-btn:hover { background: #d33828; transform: scale(1.05); }
-  .maps-btn.whatsapp { background: #25D366; }
-  .maps-btn.whatsapp:hover { background: #1ebe56; }
-  .maps-btn.blacklist { background: #333; }
-  .maps-btn.blacklist:hover { background: #000; }
 
-  .nav-links a { color: var(--text-color); text-decoration: none; font-weight: bold; margin: 0 10px; opacity: 0.9; }
-  .nav-links a:hover { text-decoration: underline; opacity: 1; }
+  .action-btns {
+    margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  }
+  .maps-btn {
+    padding: 12px 24px; background: white; color: #333; text-decoration: none;
+    border-radius: 50px; font-weight: bold; font-size: 1.1rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: 0.3s; border: none; cursor:pointer;
+  }
+  .maps-btn:hover { transform: translateY(-3px); }
+  .whatsapp { background: #25D366; color: white; }
+  .blacklist { background: #ff4757; color: white; }
   
-  .floating-icon { position: absolute; opacity: 0.2; font-size: 3rem; animation: floatUp 10s linear infinite; z-index: 1; }
-  @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0.8; } 100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; } }
+  .nav-links a {
+    color: var(--text-color); text-decoration: none; font-size: 1.1rem; margin: 0 5px; opacity: 0.9;
+  }
+  .nav-links a:hover { text-decoration: underline; opacity: 1; }
+
+  .winner-anim { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
 </style>
 </head>
 <body>
-  
-  <!-- Dark Mode Toggle -->
-  <button id="darkModeToggle" onclick="toggleDarkMode()">🌙</button>
+  <button class="theme-toggle" onclick="toggleTheme()">🌗 Dark Mode</button>
 
   <div class="card">
-    <h1>Apa nak makan harini?</h1>
+    <h1>🤔 Nak Makan Apa?</h1>
     
     <div class="filters">
       <select id="categoryFilter">
         <option value="Any">All Categories</option>
-        <option value="Favorites">⭐ My Favorites Only</option>
-        <option value="Breakfast">Breakfast</option>
-        <option value="Lunch">Lunch</option>
-        <option value="Dinner">Dinner</option>
-        <option value="Dessert">Dessert</option>
-        <option value="Drinks">Drinks</option>
-        <option value="Snack">Snack</option>
+        <option value="Favorites">⭐ My Favorites</option>
+        <option value="Nasi">🍚 Nasi</option>
+        <option value="Mee">🍜 Mee</option>
+        <option value="Fast Food">🍔 Fast Food</option>
+        <option value="Western">🥩 Western</option>
+        <option value="Sup">🍲 Sup</option>
       </select>
 
       <select id="budgetFilter">
@@ -208,62 +183,37 @@
     </div>
 
     <button onclick="startRoulette()" id="spinBtn" class="spin-btn">
-      <span class="btn-icon">🍽️</span> Pilih untuk saya!
+      🎰 Spin the Wheel!
     </button>
-    
+
+    <div id="aiChef" style="margin-top: 1rem; width: 100%; display: flex; justify-content: center; gap: 10px;">
+      <input type="text" id="chefInput" placeholder="🤖 Tell the chef what you're craving..." style="width: 250px; padding: 12px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); background: var(--select-bg); color: var(--text-color); outline: none; font-family: inherit;">
+      <button onclick="askChef()" style="background: linear-gradient(135deg, #bb86fc 0%, #7c4dff 100%); color: white; border: none; padding: 0 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s;">Ask</button>
+    </div>
+
     <div id="result">
-      <div style="font-size: 1.5rem; font-weight: normal; opacity: 0.8;">Click to spin!</div>
+      <div style="font-size: 1.5rem; opacity: 0.8;">Press Spin or Ask the Chef!</div>
     </div>
     <div id="actionContainer" class="action-btns" style="display: none;"></div>
 
-    <div class="nav-links" style="margin-top: 2rem;">
+    <div class="nav-links" style="margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
       <a href="list.html">📸 Gallery & Leaderboard</a><br><br>
-      <a href="add.html">➕ Add Dish</a> | <a href="review.html">⭐ Review a Dish</a> | <a href="room.html">📡 Live Room</a> | <a href="view.html">🔒 Admin</a>
+      <a href="swipe.html" style="color: #ff9a9e; font-weight:800;">🔥 Swipe Mode</a> | <a href="add.html">➕ Add Dish</a> | <a href="review.html">⭐ Review a Dish</a> | <a href="room.html">📡 Live Room</a> | <a href="view.html">🔒 Admin</a>
     </div>
   </div>
 
   <script>
-    // Dark Mode Logic
-    if (localStorage.getItem('dark_mode') === 'true') {
-      document.body.classList.add('dark-mode');
-      document.getElementById('darkModeToggle').innerText = '☀️';
-    }
-
-    function toggleDarkMode() {
-      const body = document.body;
-      body.classList.toggle('dark-mode');
-      const isDark = body.classList.contains('dark-mode');
-      localStorage.setItem('dark_mode', isDark);
-      document.getElementById('darkModeToggle').innerText = isDark ? '☀️' : '🌙';
-    }
-
-    // Audio Context
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playTickSound() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-    }
-    function playWinSound() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-    }
-
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
+    
+    // Theme Logic
+    const savedTheme = localStorage.getItem('nakmakan_theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+    
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('nakmakan_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
     let allDishes = [];
     let isSpinning = false;
 
@@ -277,6 +227,33 @@
     window.addEventListener('pageshow', (event) => {
       if (event.persisted) { window.location.reload(); }
     });
+
+    // Audio Context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClickSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+    
+    function playWinSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
 
     // Blacklist Logic
     function blacklistDish(dishName) {
@@ -320,6 +297,65 @@
       });
     }
 
+    function askChef() {
+      const q = document.getElementById('chefInput').value.toLowerCase();
+      if (!q || allDishes.length === 0) return;
+
+      const validDishes = getValidDishes();
+      const matches = validDishes.filter(d => 
+        d.name.toLowerCase().includes(q) || 
+        d.category.toLowerCase().includes(q) || 
+        (d.budget && d.budget.includes(q))
+      );
+
+      if (matches.length > 0) {
+        const winner = matches[Math.floor(Math.random() * matches.length)];
+        
+        document.getElementById('chefInput').value = '';
+        isSpinning = true;
+        document.getElementById('spinBtn').style.opacity = '0.5';
+        document.getElementById('actionContainer').style.display = 'none';
+        const resultDiv = document.getElementById('result');
+
+        let ticks = 0;
+        const maxTicks = 20;
+        const spinInterval = setInterval(() => {
+          const r = allDishes[Math.floor(Math.random() * allDishes.length)];
+          resultDiv.innerHTML = `<div class="dish-name" style="font-size: 3rem;">${r.name}</div><div class="dish-emoji">${r.emoji}</div>`;
+          playClickSound();
+          if (navigator.vibrate) navigator.vibrate(20);
+          ticks++;
+          
+          if (ticks >= maxTicks) {
+            clearInterval(spinInterval);
+            isSpinning = false;
+            document.getElementById('spinBtn').style.opacity = '1';
+            
+            resultDiv.innerHTML = `
+              <div style="color:#bb86fc; font-weight:bold; font-size:1.2rem;">🤖 The Chef Recommends:</div>
+              <div class="dish-name winner-anim" style="color: var(--text-color); font-size: 3.5rem;">${winner.name}</div>
+              <div class="dish-emoji winner-anim">${winner.emoji}</div>
+            `;
+            
+            playWinSound();
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'] });
+            
+            let mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}`;
+            document.getElementById('actionContainer').style.display = 'flex';
+            document.getElementById('actionContainer').innerHTML = `
+              <a href="${mapsUrl}" target="_blank" class="maps-btn">📍 Find Nearby</a>
+              <a href="https://food.grab.com/my/en/restaurants?search=${encodeURIComponent(winner.name)}" target="_blank" class="maps-btn" style="background:#00B14F; color:white;">🟢 GrabFood</a>
+              <a href="https://www.foodpanda.my/restaurants/new?q=${encodeURIComponent(winner.name)}" target="_blank" class="maps-btn" style="background:#D70F64; color:white;">🐼 FoodPanda</a>
+              <button onclick="blacklistDish('${winner.name}')" class="maps-btn blacklist" style="width:100%;">Not Today 🚫</button>
+            `;
+          }
+        }, 100);
+      } else {
+        alert("The Chef couldn't find a match for that. Try something else!");
+      }
+    }
+
     async function startRoulette() {
       if (isSpinning) return;
       if (allDishes.length === 0) {
@@ -330,7 +366,7 @@
       const validDishes = getValidDishes();
       
       if (validDishes.length === 0) {
-        document.getElementById('result').innerHTML = `<div style="font-size: 1.5rem;">No dishes match your filters! 😢 (Or they are all blacklisted)</div>`;
+        document.getElementById('result').innerHTML = `<div style="font-size: 1.5rem;">No dishes match your filters! 😢</div>`;
         return;
       }
 
@@ -362,7 +398,9 @@
       let delay = 50;
 
       function spinStep() {
-        playTickSound();
+        playClickSound();
+        if (navigator.vibrate) navigator.vibrate(20);
+        
         const random = validDishes[Math.floor(Math.random() * validDishes.length)];
         resultDiv.innerHTML = `
           <div class="dish-name" style="opacity: 0.7;">${random.name}</div>
@@ -376,6 +414,9 @@
         } else {
           // Winner!
           playWinSound();
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+          confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'] });
+          
           const winner = validDishes[Math.floor(Math.random() * validDishes.length)];
           resultDiv.innerHTML = `
             <div class="dish-name winner-anim" style="color: var(--text-color); font-size: 3.5rem;">${winner.name}</div>
@@ -387,44 +428,45 @@
             mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name)}/@${userLat},${userLng},15z`;
           }
 
+          document.getElementById('actionContainer').style.display = 'flex';
           document.getElementById('actionContainer').innerHTML = `
             <a href="${mapsUrl}" target="_blank" class="maps-btn">📍 Find Nearby</a>
-            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent('The magic wheel has spoken! We are having *' + winner.name + '* ' + winner.emoji + ' tonight! Who is in? \n\nSpin your own: https://unknown-user-status.github.io/nak-makan-apa/')}" target="_blank" class="maps-btn whatsapp">💬 Invite</a>
-            <button onclick="blacklistDish('${winner.name}')" class="maps-btn blacklist">Not Today 🚫</button>
+            <a href="https://food.grab.com/my/en/restaurants?search=${encodeURIComponent(winner.name)}" target="_blank" class="maps-btn" style="background:#00B14F; color:white;">🟢 GrabFood</a>
+            <a href="https://www.foodpanda.my/restaurants/new?q=${encodeURIComponent(winner.name)}" target="_blank" class="maps-btn" style="background:#D70F64; color:white;">🐼 FoodPanda</a>
+            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent('The magic wheel has spoken! We are having *' + winner.name + '* ' + winner.emoji + ' tonight! Who is in? \n\nSpin your own: https://unknown-user-status.github.io/nak-makan-apa/')}" target="_blank" class="maps-btn whatsapp" style="width:100%;">💬 Invite</a>
+            <button onclick="blacklistDish('${winner.name}')" class="maps-btn blacklist" style="width:100%;">Not Today 🚫</button>
           `;
-          document.getElementById('actionContainer').style.display = 'flex';
-
-          // Increment Pick Count
-          fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'increment_pick', name: winner.name })
-          }).catch(e => console.log('Increment failed quietly'));
-
+          
           isSpinning = false;
           document.getElementById('spinBtn').style.opacity = '1';
         }
       }
-      spinStep();
+      setTimeout(spinStep, delay);
     }
-
-    // Floating icons
-    const emojis = ["🍔","🍕","🍟","🍣","🍱","🍛","🍜","🍝","🍤","🥟"];
-    for(let i=0; i<15; i++) {
-      const el = document.createElement('div');
-      el.className = 'floating-icon';
-      el.innerText = emojis[Math.floor(Math.random()*emojis.length)];
-      el.style.left = Math.random() * 100 + 'vw';
-      el.style.animationDelay = (Math.random() * 10) + 's';
-      el.style.animationDuration = (10 + Math.random() * 10) + 's';
-      el.style.fontSize = (2 + Math.random() * 3) + 'rem';
-      document.body.appendChild(el);
+    
+    // Task 5: Local Notifications
+    if ('Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          // Check every minute if it's lunch or dinner time
+          setInterval(() => {
+            const now = new Date();
+            const hours = now.getHours();
+            const mins = now.getMinutes();
+            // 12:30 PM or 7:30 PM (19:30)
+            if ((hours === 12 && mins === 30) || (hours === 19 && mins === 30)) {
+              new Notification("🍽️ Nak Makan Apa?", {
+                body: "It's time to eat! Spin the wheel to decide your meal! 🍔",
+                icon: "icon.svg"
+              });
+            }
+          }, 60000);
+        }
+      });
     }
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-      });
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
     }
   </script>
 </body>
