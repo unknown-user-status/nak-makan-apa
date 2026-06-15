@@ -298,15 +298,26 @@
     }
 
     function askChef() {
-      const q = document.getElementById('chefInput').value.toLowerCase();
+      let q = document.getElementById('chefInput').value.toLowerCase();
       if (!q || allDishes.length === 0) return;
 
-      const validDishes = getValidDishes();
-      const matches = validDishes.filter(d => 
-        d.name.toLowerCase().includes(q) || 
-        d.category.toLowerCase().includes(q) || 
-        (d.budget && d.budget.includes(q))
-      );
+      // Map keywords to budget symbols
+      if (q.includes('murah') || q.includes('cheap')) q = '💲';
+      else if (q.includes('mahal') || q.includes('expensive')) q = '💲💲💲';
+      else if (q === 'average' || q === 'biasa') q = '💲💲';
+
+      // Clean up blacklist
+      let bl = JSON.parse(localStorage.getItem('nakmakan_blacklist') || '{}');
+      let now = Date.now();
+      for (let key in bl) { if (bl[key] < now) delete bl[key]; }
+
+      // Search all dishes, ignore dropdown filters, but respect blacklist
+      const matches = allDishes.filter(d => {
+        if (bl[d.name]) return false;
+        return d.name.toLowerCase().includes(q) || 
+               d.category.toLowerCase().includes(q) || 
+               (d.budget && d.budget.includes(q));
+      });
 
       if (matches.length > 0) {
         const winner = matches[Math.floor(Math.random() * matches.length)];
