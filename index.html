@@ -70,7 +70,10 @@
       <span class="btn-icon">🍽️</span> Pilih untuk saya!
     </button>
     <div id="result"></div>
-    <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+    <div style="margin-top: 1.5rem;">
+      <a href="add.html" style="color: #fff; text-decoration: underline; font-weight: bold;">+ Add New Dish</a>
+    </div>
+    <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
       Created by <a href="https://github.com/unknown-user-status" target="_blank" style="color: #fff; text-decoration: underline;">unknown-user-status</a>
     </div>
   </div>
@@ -91,13 +94,18 @@
       osc.stop(audioCtx.currentTime + 0.15);
     }
 
-    const dishes = [
+    const defaultDishes = [
       { name: "Nasi Lemak", emoji: "🍚" }, { name: "Roti Canai", emoji: "🥞" },
       { name: "Laksa", emoji: "🍜" }, { name: "Satay", emoji: "🍢" },
       { name: "Mee Goreng", emoji: "🍝" }, { name: "Cendol", emoji: "🍧" },
       { name: "Rendang", emoji: "🍛" }, { name: "Teh Tarik", emoji: "☕" },
       { name: "Mee Rebus", emoji: "🍲" }, { name: "Nasi Kerabu", emoji: "🥗" }
     ];
+    let dishes = JSON.parse(localStorage.getItem('myDishes'));
+    if (!dishes) {
+      dishes = defaultDishes;
+      localStorage.setItem('myDishes', JSON.stringify(dishes));
+    }
     function pickDish() {
       playPopSound();
       const random = dishes[Math.floor(Math.random() * dishes.length)];
