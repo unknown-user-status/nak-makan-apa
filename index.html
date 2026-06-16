@@ -329,13 +329,14 @@
     }
 
     function askChef() {
-      let q = document.getElementById('chefInput').value.toLowerCase();
-      if (!q || allDishes.length === 0) return;
+      const originalQ = document.getElementById('chefInput').value.toLowerCase().trim();
+      if (!originalQ || allDishes.length === 0) return;
 
-      // Map keywords to budget symbols
-      if (q.includes('murah') || q.includes('cheap')) q = '💲';
-      else if (q.includes('mahal') || q.includes('expensive')) q = '💲💲💲';
-      else if (q === 'average' || q === 'biasa') q = '💲💲';
+      // Map keywords to exact budget targets
+      let targetBudget = null;
+      if (originalQ.includes('murah') || originalQ.includes('cheap')) targetBudget = '💲';
+      else if (originalQ.includes('mahal') || originalQ.includes('expensive')) targetBudget = '💲💲💲';
+      else if (originalQ.includes('average') || originalQ.includes('biasa')) targetBudget = '💲💲';
 
       // Clean up blacklist
       let bl = JSON.parse(localStorage.getItem('nakmakan_blacklist') || '{}');
@@ -345,9 +346,20 @@
       // Search all dishes, ignore dropdown filters, but respect blacklist
       const matches = allDishes.filter(d => {
         if (bl[d.name]) return false;
-        return d.name.toLowerCase().includes(q) || 
-               d.category.toLowerCase().includes(q) || 
-               (d.budget && d.budget.includes(q));
+        
+        if (targetBudget) {
+            // If budget is requested, it MUST strictly match
+            if (d.budget !== targetBudget) return false;
+            
+            // Remove the budget keyword from query to see if they also asked for a specific food (e.g., "nasi murah")
+            const cleanQ = originalQ.replace(/(murah|cheap|mahal|expensive|average|biasa)/g, '').trim();
+            if (cleanQ === '') return true; // Only asked for budget, so all matching budgets are fine
+            
+            return d.name.toLowerCase().includes(cleanQ) || d.category.toLowerCase().includes(cleanQ);
+        } else {
+            // Normal search without budget keywords
+            return d.name.toLowerCase().includes(originalQ) || d.category.toLowerCase().includes(originalQ);
+        }
       });
 
       if (matches.length > 0) {
