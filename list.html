@@ -7,6 +7,9 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-init.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -50,18 +53,11 @@
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-    
-    // Force reload if user clicks the browser "Back" button
-    window.addEventListener('pageshow', (event) => {
-      if (event.persisted) { window.location.reload(); }
-    });
-
-    // Fetch latest data (no cache)
-    fetch(WEB_APP_URL, { cache: 'no-store' })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('loading').style.display = 'none';
+    // Fetch latest data
+    db.ref('dishes').once('value').then(snapshot => {
+      const dataObj = snapshot.val();
+      const data = dataObj ? Object.values(dataObj) : [];
+      document.getElementById('loading').style.display = 'none';
         
         // Sort for Leaderboard
         const sorted = [...data].sort((a, b) => b.pickCount - a.pickCount);
@@ -97,6 +93,17 @@
           const isFav = favs.includes(dish.name);
           const safeName = dish.name.replace(/'/g, "\\'");
           
+          let ratingStr = '';
+          if (dish.reviews) {
+            const reviews = dish.reviews.split(' | ');
+            let sum = 0, count = 0;
+            reviews.forEach(r => {
+              const val = parseInt(r.split('⭐')[0]);
+              if (!isNaN(val)) { sum += val; count++; }
+            });
+            if (count > 0) ratingStr = `<div style="color: #ffeb3b; font-weight: bold; font-size: 0.9rem; margin-top: 5px;">⭐ ${(sum/count).toFixed(1)} (${count})</div>`;
+          }
+          
           gallery.innerHTML += `
             <div class="card">
               <div style="text-align: right;">
@@ -108,6 +115,7 @@
               <div class="card-name">${dish.name}</div>
               <div class="card-cat">${dish.category}</div>
               <div class="card-count">Picked: ${dish.pickCount}</div>
+              ${ratingStr}
             </div>
           `;
         });

@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-init.js"></script>
 <style>
   * { box-sizing: border-box; }
   
@@ -218,10 +221,14 @@
     </div>
     <div id="actionContainer" class="action-btns" style="display: none;"></div>
 
-    <div class="nav-links" style="margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-      <a href="list.html">📸 Gallery & Leaderboard</a><br><br>
-      <a href="swipe.html" style="color: #ff9a9e; font-weight:800;">🔥 Swipe Mode</a> | <a href="add.html">➕ Add Dish</a> | <a href="review.html">⭐ Review a Dish</a> | <a href="room.html">📡 Live Room</a> | <a href="view.html">🔒 Admin</a>
-    </div>
+    <nav style="margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+      <a href="index.html" style="color: #fff; font-weight: 800; text-decoration: underline;">🏠 Home</a> |
+      <a href="list.html" style="color: #fff; text-decoration: none;">🖼️ Gallery</a> |
+      <a href="swipe.html" style="color: #fff; text-decoration: none;">❤️ Swipe</a> |
+      <a href="room.html" style="color: #fff; text-decoration: none;">⚔️ Room</a> |
+      <a href="slots.html" style="color: #fff; text-decoration: none;">🎰 Slots</a> |
+      <a href="login.html" style="color: #fff; text-decoration: none;">🔒 Admin</a>
+    </nav>
   </div>
 
   <!-- Floating AI Chef UI -->
@@ -239,8 +246,6 @@
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-    
     // Theme Logic
     const savedTheme = localStorage.getItem('nakmakan_theme');
     if (savedTheme === 'dark') document.body.classList.add('dark-mode');
@@ -263,11 +268,28 @@
     let allDishes = [];
     let isSpinning = false;
 
-    // Fetch dishes (always get fresh data, no cache)
-    fetch(WEB_APP_URL, { cache: 'no-store' })
-      .then(response => response.json())
-      .then(data => { if (data && data.length > 0) allDishes = data; })
-      .catch(err => console.error("Error loading dishes:", err));
+    function getAvgRating(reviewsStr) {
+      if (!reviewsStr) return 'No reviews yet';
+      const reviews = reviewsStr.split(' | ');
+      let sum = 0;
+      let count = 0;
+      reviews.forEach(r => {
+        const starStr = r.split('⭐')[0];
+        const val = parseInt(starStr);
+        if (!isNaN(val)) { sum += val; count++; }
+      });
+      if (count === 0) return 'No reviews yet';
+      const avg = (sum / count).toFixed(1);
+      return `⭐ ${avg} (${count} review${count>1?'s':''})`;
+    }
+
+    // Fetch dishes
+    db.ref('dishes').once('value').then(snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        allDishes = Object.values(data);
+      }
+    }).catch(err => console.error("Error loading dishes:", err));
 
     // Force reload if user clicks the browser "Back" button
     window.addEventListener('pageshow', (event) => {
@@ -398,10 +420,12 @@
             isSpinning = false;
             document.getElementById('spinBtn').style.opacity = '1';
             
+            const ratingStr = getAvgRating(winner.reviews);
             resultDiv.innerHTML = `
               <div style="color:#bb86fc; font-weight:bold; font-size:1.2rem;">🤖 The Chef Recommends:</div>
               <div class="dish-name winner-anim" style="color: var(--text-color); font-size: 3.5rem;">${winner.name}</div>
               <div class="dish-emoji winner-anim">${winner.emoji}</div>
+              <div class="winner-anim" style="color: #ffeb3b; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">${ratingStr}</div>
             `;
             
             playWinSound();
@@ -485,9 +509,11 @@
           confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'] });
           
           const winner = validDishes[Math.floor(Math.random() * validDishes.length)];
+          const ratingStr = getAvgRating(winner.reviews);
           resultDiv.innerHTML = `
             <div class="dish-name winner-anim" style="color: var(--text-color); font-size: 3.5rem;">${winner.name}</div>
             <div class="dish-emoji winner-anim">${winner.emoji}</div>
+            <div class="winner-anim" style="color: #ffeb3b; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">${ratingStr}</div>
           `;
           
           let mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}`;

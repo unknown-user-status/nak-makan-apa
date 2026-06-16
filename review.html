@@ -7,6 +7,10 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+<script src="firebase-init.js"></script>
 <style>
   body {
     margin: 0; padding: 0; display: flex; flex-direction: column;
@@ -57,46 +61,55 @@
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-    
-    fetch(WEB_APP_URL)
-      .then(r => r.json())
-      .then(data => {
-        const sel = document.getElementById('dishSelect');
-        sel.innerHTML = '<option value="">-- Choose a dish --</option>';
-        data.forEach(d => {
-          sel.innerHTML += `<option value="${d.name}">${d.emoji} ${d.name}</option>`;
-        });
-      });
+    db.ref('dishes').once('value').then(snapshot => {
+      const dataObj = snapshot.val();
+      const sel = document.getElementById('dishSelect');
+      sel.innerHTML = '<option value="">-- Choose a dish --</option>';
+      if (dataObj) {
+        for (let key in dataObj) {
+          const d = dataObj[key];
+          sel.innerHTML += `<option value="${key}">${d.emoji} ${d.name}</option>`;
+        }
+      }
+    });
 
     document.getElementById('reviewForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('dishSelect').value;
+      const key = document.getElementById('dishSelect').value;
+      const selText = document.getElementById('dishSelect').options[document.getElementById('dishSelect').selectedIndex].text;
       const rating = document.getElementById('dishRating').value;
       const comment = document.getElementById('dishComment').value;
       const photoFile = document.getElementById('dishPhoto').files[0];
       
       document.getElementById('status').innerText = "Submitting review... ⏳";
       
-      let photoBase64 = null;
+      let photoUrl = '';
       if (photoFile) {
-        photoBase64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(photoFile);
-        });
+        try {
+          const storageRef = storage.ref('reviews/' + Date.now() + '_' + photoFile.name);
+          await storageRef.put(photoFile);
+          photoUrl = await storageRef.getDownloadURL();
+        } catch(err) {
+          console.error("Storage Error:", err);
+          photoUrl = '[Photo Upload Failed - check Firebase Storage rules]';
+        }
       }
       
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'add_review', name: name, rating: rating, comment: comment, photoBase64: photoBase64 })
-      }).then(() => {
-        document.getElementById('status').innerText = `✅ Review saved for ${name}!`;
-        e.target.reset();
-      }).catch(err => {
-        document.getElementById('status').innerText = `✅ Review saved for ${name}!`;
-        e.target.reset();
+      const dishRef = db.ref('dishes/' + key);
+      dishRef.once('value').then(snap => {
+        const d = snap.val();
+        let newReview = rating + "⭐: " + comment;
+        if (photoUrl && !photoUrl.includes('Failed')) {
+          newReview += ` (Photo: <a href="${photoUrl}" target="_blank">View</a>)`;
+        }
+        
+        const currentReviews = d.reviews ? d.reviews : '';
+        const updatedReviews = currentReviews ? currentReviews + ' | ' + newReview : newReview;
+        
+        dishRef.update({ reviews: updatedReviews }).then(() => {
+          document.getElementById('status').innerText = `✅ Review saved for ${selText}!`;
+          e.target.reset();
+        });
       });
     });
 

@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#1a1a2e">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-init.js"></script>
 <style>
   body {
     margin: 0; padding: 0; display: flex; flex-direction: column;
@@ -100,18 +103,17 @@
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
     let dishes = [];
     let currentIndex = 0;
 
-    fetch(WEB_APP_URL, { cache: 'no-store' })
-      .then(r => r.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          dishes = data.sort(() => Math.random() - 0.5);
-          renderCards();
-        }
-      });
+    db.ref('dishes').once('value').then(snapshot => {
+      const dataObj = snapshot.val();
+      const data = dataObj ? Object.values(dataObj) : [];
+      if (data && data.length > 0) {
+        dishes = data.sort(() => Math.random() - 0.5);
+        renderCards();
+      }
+    });
 
     function renderCards() {
       const container = document.getElementById('cardContainer');

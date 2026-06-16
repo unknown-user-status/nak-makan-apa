@@ -6,6 +6,9 @@
   <title>Live Room - Nak Makan Apa?</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-init.js"></script>
   <style>
     :root { --bg: #121212; --card: rgba(255,255,255,0.05); --text: #f1f1f1; --accent: #bb86fc; }
     body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; padding-bottom: 100px; }
@@ -130,8 +133,6 @@
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-    
     // Web Audio Synthesizer for UI feedback
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playTick() {
@@ -148,12 +149,64 @@
 
     // --- Core Networking ---
     function sendPost(payload) {
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      if (payload.action === 'send_emoji') {
+        db.ref('room/emojiStream').push({ emoji: payload.emoji, x: payload.x, time: Date.now() });
+      } else if (payload.action === 'veto') {
+        db.ref('room').transaction(room => {
+          if (!room) room = {};
+          room.vetoCount = (room.vetoCount || 0) + 1;
+          if (room.vetoCount >= 3) {
+             room.winnerName = '';
+             room.winnerEmoji = '';
+             room.vetoCount = 0;
+             room.timestamp = 1;
+          }
+          return room;
+        });
+      } else if (payload.action === 'join_pay') {
+        db.ref('room').transaction(room => {
+          if (!room) room = {};
+          let pool = [];
+          try { pool = JSON.parse(room.whoPaysPool || '[]'); } catch(e){}
+          if (!Array.isArray(pool)) pool = [];
+          pool.push(payload.name);
+          room.whoPaysPool = JSON.stringify(pool);
+          return room;
+        });
+      } else if (payload.action === 'spin_pay') {
+        db.ref('room/whoPaysPool').once('value').then(snap => {
+           let pool = [];
+           try { pool = JSON.parse(snap.val() || '[]'); } catch(e){}
+           if(pool.length > 0) {
+             const loser = pool[Math.floor(Math.random() * pool.length)];
+             db.ref('room').update({ whoPaysLoser: loser, whoPaysPool: '[]' });
+           }
+        });
+      } else if (payload.action === 'start_battle') {
+        db.ref('room').update({
+           winnerName: 'BATTLE_ROYALE',
+           battleState: JSON.stringify({ left: payload.left, right: payload.right, leftVotes: 0, rightVotes: 0 }),
+           timestamp: Date.now()
+        });
+      } else if (payload.action === 'vote_battle') {
+        db.ref('room').transaction(room => {
+           if(room && room.battleState) {
+             let state = JSON.parse(room.battleState);
+             if (payload.side === 'left') state.leftVotes++;
+             else state.rightVotes++;
+             room.battleState = JSON.stringify(state);
+           }
+           return room;
+        });
+      } else if (payload.action === 'set_live_spin') {
+        db.ref('room').update({
+           winnerName: payload.winnerName,
+           winnerEmoji: payload.winnerEmoji,
+           vetoCount: 0,
+           timestamp: Date.now(),
+           battleState: ''
+        });
+      }
     }
 
     // --- Data & State ---
@@ -164,7 +217,12 @@
     let battleClosed = false;
 
     // Pre-fetch dishes for Battle Royale
-    fetch(WEB_APP_URL).then(r=>r.json()).then(d => { if(d && d.length>0) allDishes = d; });
+    db.ref('dishes').once('value').then(snap => {
+      const dataObj = snap.val();
+      if(dataObj) {
+        allDishes = Object.values(dataObj);
+      }
+    });
 
     // --- Emoji Engine ---
     function sendEmoji(char) {
@@ -270,68 +328,56 @@
       document.getElementById('battleOverlay').style.display='none';
     }
 
-    // --- Polling Engine ---
-    async function poll() {
-      try {
-        const res = await fetch(WEB_APP_URL + '?action=get_room_state', { cache: 'no-store' });
-        const data = await res.json();
-        
-        // 1. Top Panel (Winner or VETO or Battle)
-        const winBox = document.getElementById('winnerBox');
-        if (data.timestamp === 1) {
-          winBox.innerHTML = '<h2 style="color:#ff4757">Room Reset by VETO! 🚫</h2><p>Waiting for someone to spin the wheel...</p>';
-          document.getElementById('battleOverlay').style.display = 'none';
-        } else if (data.winnerName === 'BATTLE_ROYALE') {
-          winBox.innerHTML = '<h2 style="color:#f093fb">⚔️ Food Battle Royale is Live!</h2><p>Check the overlay!</p>';
-          try { 
-            const state = JSON.parse(data.battleState);
-            if (data.timestamp !== currentBattleTs) {
-              currentBattleTs = data.timestamp;
-              battleClosed = false;
-            }
-            if(state && state.left && !battleClosed) {
-              renderBattleUI(state);
-            }
-          } catch(e){}
-        } else if (data.winnerName) {
-          winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
-          document.getElementById('battleOverlay').style.display = 'none';
-        } else {
-          winBox.innerHTML = '<h2>Waiting...</h2><p>No active spins yet.</p>';
-          document.getElementById('battleOverlay').style.display = 'none';
-        }
-        
-        document.getElementById('vetoCount').innerText = data.vetoCount || 0;
-
-        // 2. Who Pays
-        let pool = [];
-        try { pool = JSON.parse(data.whoPaysPool || '[]'); } catch(e){}
-        document.getElementById('poolBox').innerHTML = pool.map(n => `<span class="pool-tag">${n}</span>`).join('');
-        
-        if (data.whoPaysLoser && !isPaySpinning) {
-          document.getElementById('loserBox').innerHTML = `<span style="color:#ff4757">💸 ${data.whoPaysLoser} pays!</span>`;
-        } else if (!data.whoPaysLoser && !isPaySpinning) {
-          document.getElementById('loserBox').innerHTML = '';
-        }
-
-        // 3. Emoji Stream
-        let stream = [];
-        try { stream = JSON.parse(data.emojiStream || '[]'); } catch(e){}
-        stream.forEach(e => {
-          if (!knownEmojis.includes(e.time)) {
-            knownEmojis.push(e.time);
-            spawnEmojiLocal(e.emoji, e.x);
+    // --- Firebase Listeners ---
+    db.ref('room').on('value', snap => {
+      const data = snap.val() || {};
+      
+      // 1. Top Panel (Winner or VETO or Battle)
+      const winBox = document.getElementById('winnerBox');
+      if (data.timestamp === 1) {
+        winBox.innerHTML = '<h2 style="color:#ff4757">Room Reset by VETO! 🚫</h2><p>Waiting for someone to spin the wheel...</p>';
+        document.getElementById('battleOverlay').style.display = 'none';
+      } else if (data.winnerName === 'BATTLE_ROYALE') {
+        winBox.innerHTML = '<h2 style="color:#f093fb">⚔️ Food Battle Royale is Live!</h2><p>Check the overlay!</p>';
+        try { 
+          const state = JSON.parse(data.battleState);
+          if (data.timestamp !== currentBattleTs) {
+            currentBattleTs = data.timestamp;
+            battleClosed = false;
           }
-        });
-
-      } catch (err) {
-        console.error("Polling error:", err);
+          if(state && state.left && !battleClosed) {
+            renderBattleUI(state);
+          }
+        } catch(e){}
+      } else if (data.winnerName) {
+        winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
+        document.getElementById('battleOverlay').style.display = 'none';
+      } else {
+        winBox.innerHTML = '<h2>Waiting...</h2><p>No active spins yet.</p>';
+        document.getElementById('battleOverlay').style.display = 'none';
       }
-    }
+      
+      document.getElementById('vetoCount').innerText = data.vetoCount || 0;
 
-    // Start Polling every 3 seconds
-    setInterval(poll, 3000);
-    poll(); // Initial fetch
+      // 2. Who Pays
+      let pool = [];
+      try { pool = JSON.parse(data.whoPaysPool || '[]'); } catch(e){}
+      document.getElementById('poolBox').innerHTML = pool.map(n => `<span class="pool-tag">${n}</span>`).join('');
+      
+      if (data.whoPaysLoser && !isPaySpinning) {
+        document.getElementById('loserBox').innerHTML = `<span style="color:#ff4757">💸 ${data.whoPaysLoser} pays!</span>`;
+      } else if (!data.whoPaysLoser && !isPaySpinning) {
+        document.getElementById('loserBox').innerHTML = '';
+      }
+    });
+
+    db.ref('room/emojiStream').on('child_added', snap => {
+      const e = snap.val();
+      if (!knownEmojis.includes(e.time)) {
+        knownEmojis.push(e.time);
+        spawnEmojiLocal(e.emoji, e.x);
+      }
+    });
   </script>
 </body>
 </html>

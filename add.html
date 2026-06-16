@@ -6,6 +6,9 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ee7752">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-init.js"></script>
 <style>
   body { font-family: 'Poppins', sans-serif; background: #23a6d5; color: #fff; text-align: center; padding: 50px; }
   .card { background: rgba(0,0,0,0.2); padding: 30px; border-radius: 20px; display: inline-block; }
@@ -83,21 +86,37 @@
       const greetingDiv = document.getElementById('greeting');
       greetingDiv.innerText = 'Saving to database... ⏳';
       
-      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-      
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({ action: 'add_dish', name: name, emoji: emoji, category: category, budget: budget })
+      let finalCategory = category;
+      if (category === 'Any') {
+        const lowerName = name.toLowerCase();
+        finalCategory = 'Snack'; // Default
+        if (lowerName.includes('kuih') || lowerName.includes('cake') || lowerName.includes('ice cream') || lowerName.includes('cendol') || lowerName.includes('lapis')) {
+          finalCategory = 'Dessert';
+        } else if (lowerName.includes('kopi') || lowerName.includes('teh') || lowerName.includes('sirap') || lowerName.includes('juice') || lowerName.includes('air')) {
+          finalCategory = 'Drinks';
+        } else if (lowerName.includes('nasi') && lowerName.includes('lemak')) {
+          finalCategory = 'Breakfast';
+        } else if (lowerName.includes('roti') || lowerName.includes('pancake')) {
+          finalCategory = 'Breakfast';
+        } else if (lowerName.includes('nasi') || lowerName.includes('mee') || lowerName.includes('ayam') || lowerName.includes('ikan') || lowerName.includes('laksa') || lowerName.includes('sup')) {
+          finalCategory = 'Lunch'; 
+        } else if (lowerName.includes('burger') || lowerName.includes('pizza') || lowerName.includes('steak') || lowerName.includes('satay')) {
+          finalCategory = 'Dinner';
+        }
+      }
+
+      db.ref('dishes').push({
+        name: name,
+        emoji: emoji,
+        category: finalCategory,
+        budget: budget,
+        pickCount: 0,
+        reviews: ''
       }).then(() => {
         greetingDiv.innerText = `Yum! Added ${name} to your global database!`;
-        this.reset();
-      }).catch(err => {
-        // Google Apps Script blocks reading the response, but saves the data anyway!
-        greetingDiv.innerText = `Yum! Added ${name} to your global database!`;
         document.getElementById('dishForm').reset();
+      }).catch(err => {
+        greetingDiv.innerText = `Error: ${err.message}`;
       });
     });
 

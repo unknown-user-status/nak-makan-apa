@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Slots</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-init.js"></script>
+<style>
+  body { font-family: 'Poppins', sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+  .slot-machine { background: #222; border: 4px solid #ff9a9e; border-radius: 20px; padding: 30px; display: inline-block; box-shadow: 0 10px 30px rgba(255,154,158,0.2); margin-top: 20px; }
+  .reels { display: flex; gap: 20px; justify-content: center; }
+  .reel { width: 100px; height: 120px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 5rem; overflow: hidden; position: relative; border: 4px solid #333; }
+  .spin-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 15px 40px; font-size: 1.5rem; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 30px; transition: 0.2s; }
+  .spin-btn:hover { transform: scale(1.05); }
+  .winner-text { font-size: 2rem; margin-top: 20px; color: #ffeb3b; min-height: 50px; }
+  a { color: #ccc; text-decoration: underline; display: block; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <h1>🎰 Food Slots!</h1>
+  <p>Match 3 to win a jackpot! Otherwise, eat whatever lands in the middle!</p>
+  
+  <div class="slot-machine">
+    <div class="reels">
+      <div class="reel" id="reel1">🍔</div>
+      <div class="reel" id="reel2">🍕</div>
+      <div class="reel" id="reel3">🍗</div>
+    </div>
+    <button class="spin-btn" id="spinBtn" onclick="spin()">SPIN!</button>
+  </div>
+  
+  <div class="winner-text" id="winnerText"></div>
+  <a href="index.html">Back to Main</a>
+
+  <script>
+    let dishes = [];
+    db.ref('dishes').once('value').then(snap => {
+      const dataObj = snap.val();
+      if(dataObj) dishes = Object.values(dataObj);
+    });
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTick() {
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+    
+    function spin() {
+      if (dishes.length < 3) return alert("Loading dishes...");
+      const btn = document.getElementById('spinBtn');
+      btn.disabled = true; btn.style.opacity = '0.5';
+      document.getElementById('winnerText').innerText = '';
+      
+      const r1 = document.getElementById('reel1');
+      const r2 = document.getElementById('reel2');
+      const r3 = document.getElementById('reel3');
+      
+      let ticks = 0;
+      const maxTicks = 20;
+      
+      const interval = setInterval(() => {
+        playTick();
+        r1.innerText = dishes[Math.floor(Math.random() * dishes.length)].emoji;
+        if(ticks < maxTicks + 5) r2.innerText = dishes[Math.floor(Math.random() * dishes.length)].emoji;
+        if(ticks < maxTicks + 10) r3.innerText = dishes[Math.floor(Math.random() * dishes.length)].emoji;
+        
+        ticks++;
+        if (ticks >= maxTicks + 10) {
+          clearInterval(interval);
+          btn.disabled = false; btn.style.opacity = '1';
+          
+          const e1 = r1.innerText; const e2 = r2.innerText; const e3 = r3.innerText;
+          if (e1 === e2 && e2 === e3) {
+            document.getElementById('winnerText').innerText = "🎰 JACKPOT! YOU MUST EAT THIS! 🎰";
+            confetti({ particleCount: 200, spread: 150 });
+            if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+          } else {
+            const middleDish = dishes.find(d => d.emoji === e2);
+            document.getElementById('winnerText').innerText = `You're eating: ${middleDish ? middleDish.name : 'Unknown'}!`;
+          }
+        }
+      }, 100);
+    }
+  </script>
+</body>
+</html>
