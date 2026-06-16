@@ -193,13 +193,6 @@
         <option value="Sup">🍲 Sup</option>
       </select>
 
-      <select id="budgetFilter">
-        <option value="Any">Any Budget</option>
-        <option value="💲">💲 Murah</option>
-        <option value="💲💲">💲💲 Average</option>
-        <option value="💲💲💲">💲💲💲 Mahal</option>
-      </select>
-
       <label class="nearby-toggle">
         <input type="checkbox" id="nearbyFilter" style="width: 18px; height: 18px; cursor:pointer; accent-color: #ff9a9e;">
         📍 Nearby Only
@@ -319,7 +312,6 @@
 
       // 2. Filter Dishes
       const cat = document.getElementById('categoryFilter').value;
-      const budget = document.getElementById('budgetFilter').value;
       const favs = JSON.parse(localStorage.getItem('nakmakan_favs') || '[]');
 
       return allDishes.filter(d => {
@@ -331,9 +323,6 @@
         
         // Check Category
         if (cat !== 'Favorites' && cat !== 'Any' && d.category !== cat && d.category !== 'Any') return false;
-
-        // Check Budget
-        if (budget !== 'Any' && d.budget !== budget && d.budget !== 'Any' && d.budget !== '') return false;
 
         return true;
       });
