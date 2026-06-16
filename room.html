@@ -115,7 +115,10 @@
       <div class="tug-left" id="tugLeftText">50%</div>
       <div class="tug-right" id="tugRightText">50%</div>
     </div>
-    <button onclick="document.getElementById('battleOverlay').style.display='none'" style="margin-top: 40px; background: none; color: white; border: 1px solid white; padding: 10px 20px; border-radius: 10px; cursor: pointer;">Close Battle</button>
+    <div style="margin-top: 40px; display: flex; gap: 20px;">
+      <button onclick="document.getElementById('battleOverlay').style.display='none'; battleClosed=true;" style="background: none; color: white; border: 1px solid white; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold;">Minimize Battle</button>
+      <button onclick="endBattle()" style="background: linear-gradient(135deg, #00b09b, #96c93d); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(150, 201, 61, 0.4);">🏁 End Battle & Pick Winner</button>
+    </div>
   </div>
 
   <!-- Emoji Engine UI -->
@@ -157,6 +160,8 @@
     let allDishes = [];
     let knownEmojis = [];
     let isPaySpinning = false;
+    let currentBattleTs = 0;
+    let battleClosed = false;
 
     // Pre-fetch dishes for Battle Royale
     fetch(WEB_APP_URL).then(r=>r.json()).then(d => { if(d && d.length>0) allDishes = d; });
@@ -255,6 +260,16 @@
       document.getElementById('tugRightText').innerText = Math.round(100 - lp) + '%';
     }
 
+    function endBattle() {
+      playTick();
+      const leftWin = parseInt(document.getElementById('tugLeftText').innerText) >= 50;
+      const winnerName = leftWin ? document.getElementById('fLeftName').innerText : document.getElementById('fRightName').innerText;
+      const winnerEmoji = leftWin ? document.getElementById('fLeftEmoji').innerText : document.getElementById('fRightEmoji').innerText;
+      
+      sendPost({ action: 'set_live_spin', winnerName: winnerName, winnerEmoji: winnerEmoji });
+      document.getElementById('battleOverlay').style.display='none';
+    }
+
     // --- Polling Engine ---
     async function poll() {
       try {
@@ -270,7 +285,13 @@
           winBox.innerHTML = '<h2 style="color:#f093fb">⚔️ Food Battle Royale is Live!</h2><p>Check the overlay!</p>';
           try { 
             const state = JSON.parse(data.battleState);
-            if(state && state.left) renderBattleUI(state);
+            if (data.timestamp !== currentBattleTs) {
+              currentBattleTs = data.timestamp;
+              battleClosed = false;
+            }
+            if(state && state.left && !battleClosed) {
+              renderBattleUI(state);
+            }
           } catch(e){}
         } else if (data.winnerName) {
           winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
