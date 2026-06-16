@@ -215,8 +215,6 @@
         <option value="Drinks">🥤 Drinks</option>
         <option value="Dessert">🍨 Dessert</option>
       </select>
-
-      <button class="shake-btn" id="shakeBtn" onclick="toggleShake()">📳 Enable Shake-to-Spin</button>
     </div>
 
     <button onclick="startRoulette()" id="spinBtn" class="spin-btn">
@@ -237,6 +235,10 @@
       <a href="stats.html" style="color: #fff; text-decoration: none;">📈 Stats</a> |
       <a href="login.html" style="color: #fff; text-decoration: none;">🔒 Admin</a>
     </nav>
+
+    <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+      <button class="shake-btn" id="shakeBtn" onclick="toggleShake()" style="width: 100%; max-width: 300px; margin: 0 auto; display: block; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">📳 Enable Shake-to-Spin</button>
+    </div>
   </div>
 
   <!-- Floating AI Chef UI -->
