@@ -270,11 +270,12 @@
     let isSpinning = false;
 
     async function fetchNutrition(foodName) {
-      let apiKey = localStorage.getItem('geminiApiKey');
+      // Securely fetch API key from Firebase Database instead of hardcoding
+      const snap = await db.ref('config/geminiApiKey').once('value');
+      const apiKey = snap.val();
       if (!apiKey) {
-        apiKey = prompt("Please enter your free Gemini API Key (from aistudio.google.com) to enable AI Nutrition stats:");
-        if (!apiKey) return null;
-        localStorage.setItem('geminiApiKey', apiKey);
+        console.error("Gemini API key not found in Firebase config!");
+        return null;
       }
 
       const promptText = `Analyze the food "${foodName}". Return ONLY a valid JSON object with these exact keys: "calories" (number), "protein" (string with 'g'), "carbs" (string with 'g'), "fats" (string with 'g'), "healthScore" (number from 1 to 10), and "comment" (a short, funny 1-sentence comment about eating it). Do not include markdown blocks or any other text.`;
