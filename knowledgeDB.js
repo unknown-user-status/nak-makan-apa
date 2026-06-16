@@ -748,12 +748,12 @@ function getKnowledge(foodName, category = '') {
     return {
       calories: 350, protein: "20g", carbs: "40g", fats: "10g", healthScore: 8,
       comment: "A very healthy and nutritious choice!",
-      recipe: \`<h3>Homemade \${foodName} 🥗</h3><p><b>Prep:</b> 10 mins | <b>Cook:</b> 15 mins</p><b>Chef's Advice:</b><p>This is a healthy, improvised recipe for \${foodName}! Steam your protein and veggies, and serve over brown rice for a nutritious meal!</p>\`
+      recipe: `<h3>Homemade ${foodName} 🥗</h3><p><b>Prep:</b> 10 mins | <b>Cook:</b> 15 mins</p><b>Chef's Advice:</b><p>This is a healthy, improvised recipe for ${foodName}! Steam your protein and veggies, and serve over brown rice for a nutritious meal!</p>`
     };
   }
   return {
     calories: 650, protein: "15g", carbs: "70g", fats: "30g", healthScore: 3,
     comment: "It's cheat day, enjoy the grease!",
-    recipe: \`<h3>Homemade \${foodName} 🍟</h3><p><b>Prep:</b> 5 mins | <b>Cook:</b> 20 mins</p><b>Chef's Advice:</b><p>This is a fun, improvised recipe for \${foodName}! Heat up your pan or air fryer, and cook it up until it is golden and perfectly delicious!</p>\`
+    recipe: `<h3>Homemade ${foodName} 🍟</h3><p><b>Prep:</b> 5 mins | <b>Cook:</b> 20 mins</p><b>Chef's Advice:</b><p>This is a fun, improvised recipe for ${foodName}! Heat up your pan or air fryer, and cook it up until it is golden and perfectly delicious!</p>`
   };
 }
