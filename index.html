@@ -216,11 +216,6 @@
         <option value="Dessert">🍨 Dessert</option>
       </select>
 
-      <label class="nearby-toggle">
-        <input type="checkbox" id="nearbyFilter" style="width: 18px; height: 18px; cursor:pointer; accent-color: #ff9a9e;">
-        📍 Nearby Only
-      </label>
-      
       <button class="shake-btn" id="shakeBtn" onclick="toggleShake()">📳 Enable Shake-to-Spin</button>
     </div>
 
@@ -501,24 +496,6 @@
         return;
       }
 
-      const nearbyCheck = document.getElementById('nearbyFilter').checked;
-      let userLat = null;
-      let userLng = null;
-      
-      if (nearbyCheck) {
-        document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem;">Getting your location... 📍</div>';
-        try {
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-          });
-          userLat = pos.coords.latitude;
-          userLng = pos.coords.longitude;
-        } catch (e) {
-          document.getElementById('result').innerHTML = '<div style="font-size: 1.5rem;">❌ Please enable GPS to use "Nearby Only"!</div>';
-          return;
-        }
-      }
-
       isSpinning = true;
       document.getElementById('spinBtn').style.opacity = '0.5';
       document.getElementById('actionContainer').style.display = 'none';
@@ -560,9 +537,6 @@
           renderNutrition(winner.name, winner.category);
           
           let mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name + ' near me')}`;
-          if (userLat && userLng) {
-            mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(winner.name)}/@${userLat},${userLng},15z`;
-          }
 
           document.getElementById('actionContainer').style.display = 'flex';
           document.getElementById('actionContainer').innerHTML = `
