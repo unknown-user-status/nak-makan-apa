@@ -111,6 +111,14 @@
     body:not(.dark-mode) .nearby-toggle:hover {
       border-color: rgba(0, 0, 0, 0.3);
     }
+    
+    .shake-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white; border: none; border-radius: 12px; padding: 12px 18px;
+      font-size: 1.1rem; font-weight: bold; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(245,87,108,0.3); transition: transform 0.2s;
+    }
+    .shake-btn:hover { transform: scale(1.05); }
 
   button.spin-btn {
     font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
@@ -197,6 +205,8 @@
         <input type="checkbox" id="nearbyFilter" style="width: 18px; height: 18px; cursor:pointer; accent-color: #ff9a9e;">
         📍 Nearby Only
       </label>
+      
+      <button class="shake-btn" id="shakeBtn" onclick="toggleShake()">📳 Shake to Spin (Off)</button>
     </div>
 
     <button onclick="startRoulette()" id="spinBtn" class="spin-btn">
@@ -225,6 +235,7 @@
     </div>
     <input type="text" id="chefInput" placeholder="e.g., Nasi, Murah, Western..." style="width: 100%; padding: 12px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); background: var(--select-bg); color: var(--text-color); outline: none; font-family: inherit;">
     <button onclick="askChef()" style="background: linear-gradient(135deg, #bb86fc 0%, #7c4dff 100%); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s; width: 100%;">Ask Chef</button>
+    <button onclick="suggestByWeather(event)" style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: transform 0.2s; width: 100%;">⛅ Suggest by Weather</button>
   </div>
 
   <script>
@@ -519,6 +530,95 @@
           }, 60000);
         }
       });
+    }
+
+    // --- V4 Premium Features: Shake & Weather ---
+    
+    // 1. Shake-to-Spin
+    let shakeEnabled = false;
+    let lastShakeTime = 0;
+
+    async function toggleShake() {
+      const btn = document.getElementById('shakeBtn');
+      if (shakeEnabled) {
+        shakeEnabled = false;
+        btn.innerText = '📳 Shake to Spin (Off)';
+        window.removeEventListener('devicemotion', handleMotion);
+        return;
+      }
+
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceMotionEvent.requestPermission();
+          if (permission === 'granted') activateShake(btn);
+          else alert('Permission to use accelerometer was denied.');
+        } catch (e) {
+          alert('Shake is not supported or permission denied on this device.');
+        }
+      } else {
+        activateShake(btn); // Android/older iOS
+      }
+    }
+
+    function activateShake(btn) {
+      shakeEnabled = true;
+      btn.innerText = '📳 Shake to Spin (On)';
+      window.addEventListener('devicemotion', handleMotion);
+    }
+
+    function handleMotion(event) {
+      if (!shakeEnabled || isSpinning) return;
+      const acc = event.accelerationIncludingGravity;
+      if (!acc) return;
+      const mag = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+      
+      // Gravity is ~9.8, so >22 is a strong shake
+      if (mag > 22) {
+        const now = Date.now();
+        if (now - lastShakeTime > 2000) {
+          lastShakeTime = now;
+          startRoulette();
+        }
+      }
+    }
+
+    // 2. Weather-Smart AI Chef
+    async function suggestByWeather(e) {
+      const btn = e.target;
+      const originalText = btn.innerText;
+      btn.innerText = '⛅ Checking Weather...';
+      
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+        });
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+
+        const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const wData = await wRes.json();
+        const code = wData.current_weather.weathercode;
+        const temp = wData.current_weather.temperature;
+
+        // WMO Codes: 51+ means rain/snow/thunder
+        let suggestion = '';
+        if (code >= 51 && code <= 99) {
+            suggestion = 'sup';
+            alert(`It's raining or bad weather (${temp}°C)! 🌧️\nThe Chef is spinning for hot comforting food!`);
+        } else if (temp > 32) {
+            suggestion = 'air';
+            alert(`It's blazing hot outside (${temp}°C)! ☀️\nThe Chef is spinning for cold drinks or dessert!`);
+        } else {
+            alert(`The weather is nice (${temp}°C)! 🌤️\nThe Chef says you can eat anything today!`);
+            suggestion = ''; // Pick anything
+        }
+        
+        document.getElementById('chefInput').value = suggestion;
+        askChef();
+      } catch (err) {
+        alert("Couldn't get your location to check the weather. Please enable GPS!");
+      }
+      btn.innerText = originalText;
     }
 
     if ('serviceWorker' in navigator) {
