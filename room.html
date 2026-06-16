@@ -1,161 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Spin Room</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ee7752">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<style>
-  body {
-    margin: 0; padding: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; min-height: 100vh;
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    color: #fff; overflow: hidden;
-  }
-  @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  .card {
-    background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 30px;
-    padding: 3rem 2rem; text-align: center;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    max-width: 90%; width: 500px; z-index: 10;
-  }
-  h1 { font-size: 2.5rem; margin-top: 0; margin-bottom: 1rem; line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-  button.host-btn {
-    font-size: 1.2rem; padding: 1rem 2rem; border: none; border-radius: 50px;
-    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-    color: #333; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    margin: 10px; transition: transform 0.3s;
-  }
-  button.host-btn:hover { transform: scale(1.05); }
-  #result { font-size: 3rem; margin-top: 1.5rem; font-weight: 800; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .dish-name { text-shadow: 2px 2px 8px rgba(0,0,0,0.4); }
-  .dish-emoji { font-size: 5rem; margin-top: 10px; }
-  .winner-anim { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-  @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Room - Nak Makan Apa?</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root { --bg: #121212; --card: rgba(255,255,255,0.05); --text: #f1f1f1; --accent: #bb86fc; }
+    body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; padding-bottom: 100px; }
+    h1, h2, h3 { margin-top: 0; }
+    a { color: var(--accent); text-decoration: none; }
+    
+    .header { text-align: center; padding: 20px; background: rgba(0,0,0,0.5); }
+    .container { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
+    @media(min-width: 800px) { .container { grid-template-columns: 2fr 1fr; } }
+    
+    .card { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; text-align: center; backdrop-filter: blur(10px); }
+    
+    .veto-btn { background: #ff4757; color: white; border: none; padding: 15px 30px; font-size: 1.5rem; font-weight: 800; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 20px rgba(255,71,87,0.4); width: 100%; transition: 0.2s; margin-top: 20px; }
+    .veto-btn:hover { transform: scale(1.05); }
+    .veto-btn:active { transform: scale(0.95); }
+    
+    .battle-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: 800; border-radius: 20px; cursor: pointer; width: 100%; margin-top: 20px; transition: 0.2s; }
+    .battle-btn:hover { transform: scale(1.05); }
+    
+    /* Battle Royale Fullscreen Modal */
+    .battle-overlay { position: fixed; top:0;left:0;width:100%;height:100%; background: rgba(0,0,0,0.95); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .vs-container { display: flex; width: 100%; max-width: 800px; justify-content: space-between; align-items: center; }
+    .fighter { flex: 1; text-align: center; cursor: pointer; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 20px; margin: 0 10px; transition: 0.1s; user-select: none; border: 4px solid transparent; }
+    .fighter:active { transform: scale(0.9); border-color: white; }
+    .tug-bar { width: 100%; max-width: 800px; height: 40px; background: #333; border-radius: 20px; margin-top: 30px; overflow: hidden; display: flex; border: 2px solid white; }
+    .tug-left { background: #ff4757; width: 50%; transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; padding-left: 10px; font-weight: bold; }
+    .tug-right { background: #1e90ff; width: 50%; transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-weight: bold; }
+    
+    /* Who Pays */
+    .pay-input { padding: 12px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; outline: none; width: 60%; font-family: inherit; font-size: 1rem; }
+    .pay-btn { padding: 12px 20px; border-radius: 10px; border: none; background: #2ed573; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+    .pay-btn:hover { background: #26c265; }
+    .pay-spin { background: #ffa502; width: 100%; margin-top: 10px; }
+    .pool-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; justify-content: center; }
+    .pool-tag { background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
+    
+    /* Emoji Engine */
+    .emoji-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 50px; z-index: 50; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); }
+    .e-btn { font-size: 2.5rem; background: none; border: none; cursor: pointer; transition: 0.2s; padding: 0; outline: none; user-select: none; }
+    .e-btn:hover { transform: scale(1.3) translateY(-5px); }
+    .e-btn:active { transform: scale(0.9); }
+    .floating-emoji { position: fixed; bottom: 80px; font-size: 2.5rem; pointer-events: none; animation: floatUp 3s ease-out forwards; z-index: 40; }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.5); opacity: 0; }
+      10% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+      100% { transform: translateY(-80vh) scale(1.5) rotate(20deg); opacity: 0; }
+    }
+    
+    .spinner { border: 4px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: var(--accent); animation: spin 1s linear infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-  <div class="card">
-    <h1>📡 Live Room</h1>
-    
-    <div id="setup">
-      <p style="font-size: 1.2rem;">Are you the Host or a Viewer?</p>
-      <button class="host-btn" onclick="joinRoom('host')">👑 I am the Host</button>
-      <button class="host-btn" onclick="joinRoom('viewer')">👀 I am a Viewer</button>
+  <div class="header">
+    <h1>📡 Live Party Room</h1>
+    <a href="index.html">← Back to Main</a>
+  </div>
+
+  <div class="container">
+    <!-- Main Stage -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: center; min-height: 400px;">
+      <div id="winnerBox">
+        <div class="spinner"></div>
+        <p>Syncing with live room...</p>
+      </div>
+      <button class="veto-btn" onclick="sendVeto()">🚫 VETO! (<span id="vetoCount">0</span>/3)</button>
+      <button class="battle-btn" onclick="startBattle()">⚔️ Start Food Battle Royale</button>
     </div>
 
-    <div id="liveView" style="display: none;">
-      <p id="status" style="font-size: 1.2rem; opacity: 0.9;">Waiting for host to spin...</p>
-      <button id="spinBtn" class="host-btn" style="display: none;" onclick="hostSpin()">🎰 Spin the Wheel!</button>
+    <!-- Side Panel -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
       
-      <div id="result">
-        <div style="font-size: 1.5rem; opacity: 0.8;">The wheel is ready...</div>
+      <!-- Who Pays -->
+      <div class="card">
+        <h2>💸 Who Pays?</h2>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <input type="text" id="payName" class="pay-input" placeholder="Your Name">
+          <button class="pay-btn" onclick="joinPayPool()">Join</button>
+        </div>
+        <div id="poolBox" class="pool-list"></div>
+        <button class="pay-btn pay-spin" onclick="spinPayWheel()">🎯 Spin for Loser</button>
+        <div id="loserBox" style="margin-top: 15px; font-size: 1.5rem; font-weight: bold;"></div>
+      </div>
+      
+      <!-- Status -->
+      <div class="card" style="opacity: 0.7;">
+        <p>💡 Tip: Emojis and Votes are batched to save Google API limits. They may take ~3s to appear for others.</p>
       </div>
     </div>
-    
-    <br><br>
-    <a href="index.html" style="color: #fff; text-decoration: underline; font-weight:bold;">Back to Single Player</a>
+  </div>
+
+  <!-- Battle Royale Overlay -->
+  <div class="battle-overlay" id="battleOverlay">
+    <h1 style="color: white; font-size: 3rem; text-shadow: 0 0 20px #ff4757; text-align:center;">⚔️ TUG OF WAR ⚔️</h1>
+    <div class="vs-container">
+      <div class="fighter" id="fLeft" onclick="voteBattle('left')">
+        <div id="fLeftEmoji" style="font-size: 6rem;">🍔</div>
+        <div id="fLeftName" style="font-size: 2rem; font-weight: bold;">Burger</div>
+      </div>
+      <div style="font-size: 3rem; font-weight: bold; color: rgba(255,255,255,0.5);">VS</div>
+      <div class="fighter" id="fRight" onclick="voteBattle('right')">
+        <div id="fRightEmoji" style="font-size: 6rem;">🍕</div>
+        <div id="fRightName" style="font-size: 2rem; font-weight: bold;">Pizza</div>
+      </div>
+    </div>
+    <div class="tug-bar">
+      <div class="tug-left" id="tugLeftText">50%</div>
+      <div class="tug-right" id="tugRightText">50%</div>
+    </div>
+    <button onclick="document.getElementById('battleOverlay').style.display='none'" style="margin-top: 40px; background: none; color: white; border: 1px solid white; padding: 10px 20px; border-radius: 10px; cursor: pointer;">Close Battle</button>
+  </div>
+
+  <!-- Emoji Engine UI -->
+  <div class="emoji-bar">
+    <button class="e-btn" onclick="sendEmoji('🔥')">🔥</button>
+    <button class="e-btn" onclick="sendEmoji('🤤')">🤤</button>
+    <button class="e-btn" onclick="sendEmoji('🤮')">🤮</button>
+    <button class="e-btn" onclick="sendEmoji('👎')">👎</button>
   </div>
 
   <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
+    
+    // Web Audio Synthesizer for UI feedback
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playWinSound() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+    function playTick() {
+      if(audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
       osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.05);
     }
 
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMpuM0MoZvOO1SZvswjfAh7w49F1s4AnjEMDRucfOUXlHXogkwZhVCACF4ODB0hJhI/exec';
-    let role = '';
-    let allDishes = [];
-    let lastTimestamp = 0;
-    let pollInterval = null;
-
-    fetch(WEB_APP_URL)
-      .then(response => response.json())
-      .then(data => { if (data && data.length > 0) allDishes = data; });
-
-    function joinRoom(selectedRole) {
-      role = selectedRole;
-      document.getElementById('setup').style.display = 'none';
-      document.getElementById('liveView').style.display = 'block';
-
-      if (role === 'host') {
-        document.getElementById('status').innerText = 'You are the Host! Press Spin to broadcast to all viewers.';
-        document.getElementById('spinBtn').style.display = 'inline-block';
-      } else {
-        document.getElementById('status').innerText = '🟢 Connected! Waiting for host to spin...';
-        startPolling();
-      }
-    }
-
-    function hostSpin() {
-      if (allDishes.length === 0) return alert("Loading dishes...");
-      
-      const winner = allDishes[Math.floor(Math.random() * allDishes.length)];
-      
-      // Update local screen instantly
-      document.getElementById('result').innerHTML = `
-        <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${winner.name}</div>
-        <div class="dish-emoji winner-anim">${winner.emoji}</div>
-      `;
-      playWinSound();
-
-      // Send to server
+    // --- Core Networking ---
+    function sendPost(payload) {
       fetch(WEB_APP_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'set_live_spin', winnerName: winner.name, winnerEmoji: winner.emoji })
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
     }
 
-    function startPolling() {
-      // Poll every 2 seconds
-      pollInterval = setInterval(() => {
-        fetch(WEB_APP_URL + "?action=get_live_spin")
-          .then(res => res.json())
-          .then(data => {
-            if (data.timestamp && data.timestamp > lastTimestamp) {
-              // New spin detected!
-              if (lastTimestamp !== 0) {
-                playWinSound(); // Only play sound if it's an actual update, not the initial load
-              }
-              lastTimestamp = data.timestamp;
-              document.getElementById('status').innerText = '🎉 The wheel has spoken! 🎉';
-              document.getElementById('result').innerHTML = `
-                <div class="dish-name winner-anim" style="color: #ffe600; font-size: 3.5rem;">${data.winnerName}</div>
-                <div class="dish-emoji winner-anim">${data.winnerEmoji}</div>
-                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-                  <a href="https://food.grab.com/my/en/restaurants?search=${encodeURIComponent(data.winnerName)}" target="_blank" class="host-btn" style="background:#00B14F; color:white; text-decoration:none;">🟢 GrabFood</a>
-                  <a href="https://www.foodpanda.my/restaurants/new?q=${encodeURIComponent(data.winnerName)}" target="_blank" class="host-btn" style="background:#D70F64; color:white; text-decoration:none;">🐼 FoodPanda</a>
-                </div>
-              `;
+    // --- Data & State ---
+    let allDishes = [];
+    let knownEmojis = [];
+    let isPaySpinning = false;
 
-              if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
-              confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'] });
-            }
-          });
-      }, 2000);
+    // Pre-fetch dishes for Battle Royale
+    fetch(WEB_APP_URL).then(r=>r.json()).then(d => { if(d && d.length>0) allDishes = d; });
+
+    // --- Emoji Engine ---
+    function sendEmoji(char) {
+      playTick();
+      const xPos = Math.random() * 80 + 10; // 10% to 90% screen width
+      spawnEmojiLocal(char, xPos);
+      sendPost({ action: 'send_emoji', emoji: char, x: xPos });
     }
+    
+    function spawnEmojiLocal(char, xPos) {
+      const el = document.createElement('div');
+      el.className = 'floating-emoji';
+      el.innerText = char;
+      el.style.left = `${xPos}vw`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    // --- VETO ---
+    function sendVeto() {
+      playTick();
+      sendPost({ action: 'veto' });
+      document.getElementById('vetoCount').innerText = parseInt(document.getElementById('vetoCount').innerText) + 1;
+    }
+
+    // --- Who Pays ---
+    function joinPayPool() {
+      const name = document.getElementById('payName').value.trim();
+      if(!name) return;
+      playTick();
+      sendPost({ action: 'join_pay', name: name });
+      document.getElementById('payName').value = '';
+      // Optimistic UI update
+      document.getElementById('poolBox').innerHTML += `<span class="pool-tag">${name}</span>`;
+    }
+    
+    function spinPayWheel() {
+      if(isPaySpinning) return;
+      isPaySpinning = true;
+      document.getElementById('loserBox').innerHTML = 'Spinning... 🎲';
+      playTick();
+      sendPost({ action: 'spin_pay' });
+      // The poll will pick up the result in a few seconds
+      setTimeout(() => { isPaySpinning = false; }, 3000); 
+    }
+
+    // --- Battle Royale ---
+    function startBattle() {
+      if (allDishes.length < 2) { alert('Loading dishes... Please try again in a few seconds.'); return; }
+      playTick();
+      
+      const d1 = allDishes[Math.floor(Math.random()*allDishes.length)];
+      let d2 = allDishes[Math.floor(Math.random()*allDishes.length)];
+      while(d1.name === d2.name) d2 = allDishes[Math.floor(Math.random()*allDishes.length)];
+      
+      sendPost({ action: 'start_battle', left: d1, right: d2 });
+      
+      // Optimistic UI
+      renderBattleUI({ left: d1, right: d2, leftVotes: 0, rightVotes: 0 });
+    }
+
+    function voteBattle(side) {
+      playTick();
+      sendPost({ action: 'vote_battle', side: side });
+      
+      // Optimistic UI Update for instant feedback
+      const lText = document.getElementById('tugLeftText');
+      const rText = document.getElementById('tugRightText');
+      let lp = parseFloat(lText.innerText) || 50;
+      if(side === 'left') lp = Math.min(95, lp + 5);
+      if(side === 'right') lp = Math.max(5, lp - 5);
+      
+      lText.style.width = lp + '%';
+      rText.style.width = (100 - lp) + '%';
+      lText.innerText = Math.round(lp) + '%';
+      rText.innerText = Math.round(100 - lp) + '%';
+    }
+
+    function renderBattleUI(state) {
+      document.getElementById('battleOverlay').style.display = 'flex';
+      document.getElementById('fLeftName').innerText = state.left.name;
+      document.getElementById('fLeftEmoji').innerText = state.left.emoji;
+      document.getElementById('fRightName').innerText = state.right.name;
+      document.getElementById('fRightEmoji').innerText = state.right.emoji;
+      
+      const total = state.leftVotes + state.rightVotes;
+      let lp = 50;
+      if (total > 0) lp = (state.leftVotes / total) * 100;
+      
+      document.getElementById('tugLeftText').style.width = lp + '%';
+      document.getElementById('tugRightText').style.width = (100 - lp) + '%';
+      document.getElementById('tugLeftText').innerText = Math.round(lp) + '%';
+      document.getElementById('tugRightText').innerText = Math.round(100 - lp) + '%';
+    }
+
+    // --- Polling Engine ---
+    async function poll() {
+      try {
+        const res = await fetch(WEB_APP_URL + '?action=get_room_state', { cache: 'no-store' });
+        const data = await res.json();
+        
+        // 1. Top Panel (Winner or VETO or Battle)
+        const winBox = document.getElementById('winnerBox');
+        if (data.timestamp === 1) {
+          winBox.innerHTML = '<h2 style="color:#ff4757">Room Reset by VETO! 🚫</h2><p>Waiting for someone to spin the wheel...</p>';
+          document.getElementById('battleOverlay').style.display = 'none';
+        } else if (data.winnerName === 'BATTLE_ROYALE') {
+          winBox.innerHTML = '<h2 style="color:#f093fb">⚔️ Food Battle Royale is Live!</h2><p>Check the overlay!</p>';
+          try { 
+            const state = JSON.parse(data.battleState);
+            if(state && state.left) renderBattleUI(state);
+          } catch(e){}
+        } else if (data.winnerName) {
+          winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
+          document.getElementById('battleOverlay').style.display = 'none';
+        } else {
+          winBox.innerHTML = '<h2>Waiting...</h2><p>No active spins yet.</p>';
+          document.getElementById('battleOverlay').style.display = 'none';
+        }
+        
+        document.getElementById('vetoCount').innerText = data.vetoCount || 0;
+
+        // 2. Who Pays
+        let pool = [];
+        try { pool = JSON.parse(data.whoPaysPool || '[]'); } catch(e){}
+        document.getElementById('poolBox').innerHTML = pool.map(n => `<span class="pool-tag">${n}</span>`).join('');
+        
+        if (data.whoPaysLoser && !isPaySpinning) {
+          document.getElementById('loserBox').innerHTML = `<span style="color:#ff4757">💸 ${data.whoPaysLoser} pays!</span>`;
+        } else if (!data.whoPaysLoser && !isPaySpinning) {
+          document.getElementById('loserBox').innerHTML = '';
+        }
+
+        // 3. Emoji Stream
+        let stream = [];
+        try { stream = JSON.parse(data.emojiStream || '[]'); } catch(e){}
+        stream.forEach(e => {
+          if (!knownEmojis.includes(e.time)) {
+            knownEmojis.push(e.time);
+            spawnEmojiLocal(e.emoji, e.x);
+          }
+        });
+
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }
+
+    // Start Polling every 3 seconds
+    setInterval(poll, 3000);
+    poll(); // Initial fetch
   </script>
 </body>
 </html>
