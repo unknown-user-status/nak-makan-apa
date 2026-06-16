@@ -192,6 +192,13 @@
         db.ref('room').transaction(room => {
            if(room && room.battleState) {
              let state = JSON.parse(room.battleState);
+             
+             if (!state.voters) state.voters = {};
+             if (state.voters[payload.voter]) {
+                 return room; // Already voted!
+             }
+             state.voters[payload.voter] = true;
+             
              if (payload.side === 'left') state.leftVotes++;
              else state.rightVotes++;
              room.battleState = JSON.stringify(state);
@@ -285,8 +292,14 @@
     }
 
     function voteBattle(side) {
+      let nickname = localStorage.getItem('roomNickname');
+      if (!nickname) {
+        nickname = prompt("Enter a nickname to join the battle:");
+        if (!nickname) return;
+        localStorage.setItem('roomNickname', nickname);
+      }
       playTick();
-      sendPost({ action: 'vote_battle', side: side });
+      sendPost({ action: 'vote_battle', side: side, voter: nickname });
       
       // Optimistic UI Update for instant feedback
       const lText = document.getElementById('tugLeftText');

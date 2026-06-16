@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistics & Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-init.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Poppins', sans-serif; background: #1e1e1e; color: #fff; padding: 20px; text-align: center; margin: 0; }
+  .container { max-width: 800px; margin: 0 auto; }
+  .stat-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid #ffeb3b; }
+  h2 { color: #ffeb3b; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+  ul { list-style: none; padding: 0; margin: 0; text-align: left; }
+  li { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); margin-bottom: 10px; padding: 15px; border-radius: 10px; font-size: 1.1rem; }
+  .rank { font-size: 1.5rem; font-weight: bold; width: 40px; color: #ff9a9e; }
+  .details { flex-grow: 1; }
+  .score { font-weight: bold; color: #bb86fc; font-size: 1.2rem; }
+  a { color: #ccc; text-decoration: underline; display: block; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>📈 Live Statistics</h1>
+    
+    <div class="stat-card">
+      <h2>🏆 Most Picked Foods (All-Time)</h2>
+      <ul id="pickedList">Loading...</ul>
+    </div>
+
+    <div class="stat-card">
+      <h2>⭐ Highest Rated Foods</h2>
+      <ul id="ratedList">Loading...</ul>
+    </div>
+
+    <a href="index.html">Back to Main</a>
+  </div>
+
+  <script>
+    function getAvgRating(reviewsStr) {
+      if (!reviewsStr) return 0;
+      const reviews = reviewsStr.split(' | ');
+      let sum = 0, count = 0;
+      reviews.forEach(r => {
+        const val = parseInt(r.split('⭐')[0]);
+        if (!isNaN(val)) { sum += val; count++; }
+      });
+      return count > 0 ? (sum / count) : 0;
+    }
+
+    db.ref('dishes').on('value', snap => {
+      const dataObj = snap.val();
+      if (!dataObj) {
+        document.getElementById('pickedList').innerHTML = "<li>No data available</li>";
+        document.getElementById('ratedList').innerHTML = "<li>No data available</li>";
+        return;
+      }
+
+      const dishes = Object.values(dataObj);
+
+      // Most Picked
+      const mostPicked = [...dishes].sort((a, b) => (b.pickCount || 0) - (a.pickCount || 0)).slice(0, 5);
+      let pickedHtml = '';
+      mostPicked.forEach((d, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+        pickedHtml += `<li><span class="rank">${medal}</span><span class="details">${d.emoji} ${d.name}</span><span class="score">${d.pickCount || 0} Picks</span></li>`;
+      });
+      document.getElementById('pickedList').innerHTML = pickedHtml;
+
+      // Highest Rated
+      const highestRated = [...dishes].map(d => ({ ...d, avgRating: getAvgRating(d.reviews) }))
+                                      .filter(d => d.avgRating > 0)
+                                      .sort((a, b) => b.avgRating - a.avgRating)
+                                      .slice(0, 5);
+      let ratedHtml = '';
+      if (highestRated.length === 0) {
+        ratedHtml = "<li>No ratings yet!</li>";
+      } else {
+        highestRated.forEach((d, i) => {
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+          ratedHtml += `<li><span class="rank">${medal}</span><span class="details">${d.emoji} ${d.name}</span><span class="score">⭐ ${d.avgRating.toFixed(1)}</span></li>`;
+        });
+      }
+      document.getElementById('ratedList').innerHTML = ratedHtml;
+    });
+  </script>
+</body>
+</html>
