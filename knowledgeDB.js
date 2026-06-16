@@ -734,16 +734,6 @@ const knowledgeDB = {
              <p><b>Prep:</b> 10 mins | <b>Cook:</b> 20 mins</p>
              <b>Chef's Advice:</b>
              <p>This is a custom recipe generated for Telur goreng. To make this perfectly, ensure your ingredients are fresh. Heat your pan, add your favorite base, toss in your protein and veggies, and season heavily with local spices until fragrant!</p>`
-  },
-  "fallback_healthy": {
-    calories: 350, protein: "20g", carbs: "40g", fats: "10g", healthScore: 8,
-    comment: "A very healthy and nutritious choice!",
-    recipe: "<h3>Healthy Chef's Special 🥗</h3><p><b>Prep:</b> 10 mins | <b>Cook:</b> 15 mins</p><p>Steam your protein and veggies, serve over brown rice!</p>"
-  },
-  "fallback_junk": {
-    calories: 650, protein: "15g", carbs: "70g", fats: "30g", healthScore: 3,
-    comment: "It's cheat day, enjoy the grease!",
-    recipe: "<h3>The Chef's Cheat Meal 🍟</h3><p><b>Prep:</b> 5 mins | <b>Cook:</b> 20 mins</p><p>Deep fry until golden and crispy!</p>"
   }
 };
 
@@ -754,6 +744,16 @@ function getKnowledge(foodName, category = '') {
     }
   }
   const lowerCat = category.toLowerCase();
-  if (lowerCat.includes('healthy') || lowerCat.includes('salad')) return knowledgeDB['fallback_healthy'];
-  return knowledgeDB['fallback_junk'];
+  if (lowerCat.includes('healthy') || lowerCat.includes('salad')) {
+    return {
+      calories: 350, protein: "20g", carbs: "40g", fats: "10g", healthScore: 8,
+      comment: "A very healthy and nutritious choice!",
+      recipe: \`<h3>Homemade \${foodName} 🥗</h3><p><b>Prep:</b> 10 mins | <b>Cook:</b> 15 mins</p><b>Chef's Advice:</b><p>This is a healthy, improvised recipe for \${foodName}! Steam your protein and veggies, and serve over brown rice for a nutritious meal!</p>\`
+    };
+  }
+  return {
+    calories: 650, protein: "15g", carbs: "70g", fats: "30g", healthScore: 3,
+    comment: "It's cheat day, enjoy the grease!",
+    recipe: \`<h3>Homemade \${foodName} 🍟</h3><p><b>Prep:</b> 5 mins | <b>Cook:</b> 20 mins</p><b>Chef's Advice:</b><p>This is a fun, improvised recipe for \${foodName}! Heat up your pan or air fryer, and cook it up until it is golden and perfectly delicious!</p>\`
+  };
 }
