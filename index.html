@@ -206,7 +206,7 @@
         📍 Nearby Only
       </label>
       
-      <button class="shake-btn" id="shakeBtn" onclick="toggleShake()">📳 Shake to Spin (Off)</button>
+      <button class="shake-btn" id="shakeBtn" onclick="toggleShake()">📳 Enable Shake-to-Spin</button>
     </div>
 
     <button onclick="startRoulette()" id="spinBtn" class="spin-btn">
@@ -542,7 +542,8 @@
       const btn = document.getElementById('shakeBtn');
       if (shakeEnabled) {
         shakeEnabled = false;
-        btn.innerText = '📳 Shake to Spin (Off)';
+        btn.innerText = '📳 Enable Shake-to-Spin';
+        btn.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
         window.removeEventListener('devicemotion', handleMotion);
         return;
       }
@@ -562,7 +563,8 @@
 
     function activateShake(btn) {
       shakeEnabled = true;
-      btn.innerText = '📳 Shake to Spin (On)';
+      btn.innerText = '🛑 Disable Shake-to-Spin';
+      btn.style.background = 'linear-gradient(135deg, #ff4757 0%, #c0392b 100%)';
       window.addEventListener('devicemotion', handleMotion);
     }
 
