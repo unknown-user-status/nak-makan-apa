@@ -75,11 +75,17 @@
         <p>Syncing with live room...</p>
       </div>
       <button class="veto-btn" onclick="sendVeto()">🚫 VETO! (<span id="vetoCount">0</span>/3)</button>
-      <button class="battle-btn" onclick="startBattle()">⚔️ Start Food Battle Royale</button>
     </div>
 
     <!-- Side Panel -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- Game Modes -->
+      <div class="card" style="border-color: #f093fb;">
+        <h2 style="color: #f093fb;">🎮 Game Modes</h2>
+        <button class="battle-btn" onclick="startBattle()" style="margin-top: 10px;">⚔️ Battle Royale</button>
+        <button class="battle-btn" onclick="startTapBattle()" style="background: linear-gradient(135deg, #00c6ff, #0072ff); margin-top: 10px;">⚡ Tap Battle</button>
+      </div>
       
       <!-- Who Pays -->
       <div class="card">
@@ -121,6 +127,20 @@
     <div style="margin-top: 40px; display: flex; gap: 20px;">
       <button onclick="document.getElementById('battleOverlay').style.display='none'; battleClosed=true;" style="background: none; color: white; border: 1px solid white; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold;">Minimize Battle</button>
       <button onclick="endBattle()" style="background: linear-gradient(135deg, #00b09b, #96c93d); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(150, 201, 61, 0.4);">🏁 End Battle & Pick Winner</button>
+    </div>
+  </div>
+
+  <!-- Tap Battle Overlay -->
+  <div class="battle-overlay" id="tapOverlay" style="background: rgba(0,72,255,0.95);">
+    <h1 style="color: white; font-size: 3rem; text-shadow: 0 0 20px #00c6ff; text-align:center;">⚡ TAP BATTLE ⚡</h1>
+    <h2 id="tapTimer" style="font-size: 4rem; color: #ffeb3b; margin: 10px 0;">READY</h2>
+    <button id="tapBtn" onclick="registerTap()" style="width: 250px; height: 250px; border-radius: 50%; font-size: 2rem; font-weight: 800; border: 10px solid white; background: #ff4757; color: white; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.5); user-select: none; touch-action: manipulation; transition: transform 0.05s;">TAP!</button>
+    <h3 style="margin-top: 20px;">Your Score: <span id="tapScore" style="color: #00c6ff; font-size: 2.5rem;">0</span></h3>
+    <div id="kingPanel" style="display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 20px; margin-top: 20px; border: 2px solid #ffeb3b; text-align: center;">
+      <h2 style="color: #ffeb3b;">👑 YOU ARE THE KING! 👑</h2>
+      <p>Type a food to force everyone to eat it:</p>
+      <input type="text" id="kingFood" placeholder="e.g. KFC" style="padding: 10px; border-radius: 10px; font-size: 1.2rem; outline: none;">
+      <button onclick="kingForcePick()" style="padding: 10px 20px; background: #ffeb3b; color: black; font-weight: bold; font-size: 1.2rem; border-radius: 10px; border: none; cursor: pointer;">FORCE WINNER</button>
     </div>
   </div>
 
@@ -341,6 +361,49 @@
       document.getElementById('battleOverlay').style.display='none';
     }
 
+    // --- Tap Battle ---
+    let localTapScore = 0;
+    let tapInterval = null;
+    let isTapActive = false;
+
+    function startTapBattle() {
+      playTick();
+      const endTime = Date.now() + 6000; // 1s prep + 5s battle
+      localTapScore = 0;
+      document.getElementById('tapScore').innerText = '0';
+      db.ref('room').update({
+         winnerName: 'TAP_BATTLE',
+         tapBattleState: JSON.stringify({ active: true, endTime: endTime, winner: null }),
+         timestamp: Date.now()
+      });
+      db.ref('room/tapScores').remove(); // clear old scores
+    }
+
+    function registerTap() {
+      if(!isTapActive) return;
+      playTick();
+      localTapScore++;
+      document.getElementById('tapScore').innerText = localTapScore;
+      const btn = document.getElementById('tapBtn');
+      btn.style.transform = 'scale(0.9)';
+      setTimeout(() => btn.style.transform = 'scale(1)', 50);
+    }
+
+    function kingForcePick() {
+      const food = document.getElementById('kingFood').value.trim();
+      if(!food) return;
+      playTick();
+      db.ref('room').update({
+         winnerName: food,
+         winnerEmoji: '👑',
+         vetoCount: 0,
+         timestamp: Date.now(),
+         tapBattleState: ''
+      });
+      document.getElementById('tapOverlay').style.display='none';
+      if(tapInterval) clearInterval(tapInterval);
+    }
+
     // --- Firebase Listeners ---
     db.ref('room').on('value', snap => {
       const data = snap.val() || {};
@@ -350,8 +413,12 @@
       if (data.timestamp === 1) {
         winBox.innerHTML = '<h2 style="color:#ff4757">Room Reset by VETO! 🚫</h2><p>Waiting for someone to spin the wheel...</p>';
         document.getElementById('battleOverlay').style.display = 'none';
+        document.getElementById('tapOverlay').style.display = 'none';
+        if(tapInterval) clearInterval(tapInterval);
       } else if (data.winnerName === 'BATTLE_ROYALE') {
         winBox.innerHTML = '<h2 style="color:#f093fb">⚔️ Food Battle Royale is Live!</h2><p>Check the overlay!</p>';
+        document.getElementById('tapOverlay').style.display = 'none';
+        if(tapInterval) clearInterval(tapInterval);
         try { 
           const state = JSON.parse(data.battleState);
           if (data.timestamp !== currentBattleTs) {
@@ -362,12 +429,64 @@
             renderBattleUI(state);
           }
         } catch(e){}
+      } else if (data.winnerName === 'TAP_BATTLE') {
+        winBox.innerHTML = '<h2 style="color:#00c6ff">⚡ Tap Battle is Live!</h2><p>Check the overlay!</p>';
+        document.getElementById('battleOverlay').style.display = 'none';
+        
+        try {
+          const state = JSON.parse(data.tapBattleState);
+          if (state && state.active) {
+            document.getElementById('tapOverlay').style.display = 'flex';
+            if (!tapInterval) {
+              tapInterval = setInterval(() => {
+                const timeLeft = state.endTime - Date.now();
+                if (state.winner) {
+                  isTapActive = false;
+                  document.getElementById('tapTimer').innerText = "Winner: " + state.winner;
+                  let nickname = localStorage.getItem('roomNickname') || "";
+                  if (nickname === state.winner) document.getElementById('kingPanel').style.display = 'block';
+                  else document.getElementById('kingPanel').style.display = 'none';
+                } else if (timeLeft > 5000) {
+                  document.getElementById('tapTimer').innerText = "READY...";
+                  isTapActive = false;
+                } else if (timeLeft > 0) {
+                  document.getElementById('tapTimer').innerText = (timeLeft / 1000).toFixed(1) + "s";
+                  isTapActive = true;
+                } else {
+                  document.getElementById('tapTimer').innerText = "TIME'S UP!";
+                  if (isTapActive) {
+                    isTapActive = false;
+                    let nickname = localStorage.getItem('roomNickname');
+                    if (!nickname) {
+                      nickname = "Player_" + Math.floor(Math.random()*1000);
+                      localStorage.setItem('roomNickname', nickname);
+                    }
+                    db.ref('room/tapScores/' + nickname).set(localTapScore);
+                    
+                    setTimeout(() => {
+                      db.ref('room/tapScores').once('value').then(s => {
+                        const scores = s.val() || {};
+                        let maxScore = -1; let maxUser = "Nobody";
+                        for(let u in scores) { if(scores[u] > maxScore) { maxScore = scores[u]; maxUser = u; } }
+                        db.ref('room').update({ tapBattleState: JSON.stringify({ active: true, endTime: state.endTime, winner: maxUser }) });
+                      });
+                    }, 2000);
+                  }
+                }
+              }, 100);
+            }
+          }
+        } catch(e){}
       } else if (data.winnerName) {
         winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
         document.getElementById('battleOverlay').style.display = 'none';
+        document.getElementById('tapOverlay').style.display = 'none';
+        if(tapInterval) { clearInterval(tapInterval); tapInterval = null; }
       } else {
         winBox.innerHTML = '<h2>Waiting...</h2><p>No active spins yet.</p>';
         document.getElementById('battleOverlay').style.display = 'none';
+        document.getElementById('tapOverlay').style.display = 'none';
+        if(tapInterval) { clearInterval(tapInterval); tapInterval = null; }
       }
       
       document.getElementById('vetoCount').innerText = data.vetoCount || 0;
