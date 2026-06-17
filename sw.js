@@ -1,4 +1,4 @@
-const CACHE_NAME = 'makan-apa-v4';
+const CACHE_NAME = 'makan-apa-v5';
 const urlsToCache = [
   './index.html',
   './list.html',

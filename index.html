@@ -387,8 +387,17 @@
         // Check Favorites
         if (cat === 'Favorites' && !favs.includes(d.name)) return false;
         
-        // Check Category
-        if (cat !== 'Favorites' && cat !== 'Any' && d.category !== cat && d.category !== 'Any') return false;
+        // Check Category (Smart Match on Category or Name)
+        if (cat !== 'Favorites' && cat !== 'Any') {
+          const searchCat = cat.toLowerCase();
+          const dCat = (d.category || "").toLowerCase();
+          const dName = (d.name || "").toLowerCase();
+          
+          // Match if the category exactly/partially matches, or if the food name contains the category (e.g. "Nasi")
+          if (!dCat.includes(searchCat) && !dName.includes(searchCat)) {
+            return false;
+          }
+        }
 
         return true;
       });
