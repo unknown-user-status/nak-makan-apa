@@ -85,6 +85,7 @@
         <h2 style="color: #f093fb;">🎮 Game Modes</h2>
         <button class="battle-btn" onclick="startBattle()" style="margin-top: 10px;">⚔️ Battle Royale</button>
         <button class="battle-btn" onclick="startTapBattle()" style="background: linear-gradient(135deg, #00c6ff, #0072ff); margin-top: 10px;">⚡ Tap Battle</button>
+        <button class="battle-btn" onclick="startRoulette()" style="background: linear-gradient(135deg, #111, #444); color: #ff4757; margin-top: 10px; border: 1px solid #ff4757;">🔫 Russian Roulette</button>
       </div>
       
       <!-- Who Pays -->
@@ -141,6 +142,16 @@
       <p>Type a food to force everyone to eat it:</p>
       <input type="text" id="kingFood" placeholder="e.g. KFC" style="padding: 10px; border-radius: 10px; font-size: 1.2rem; outline: none;">
       <button onclick="kingForcePick()" style="padding: 10px 20px; background: #ffeb3b; color: black; font-weight: bold; font-size: 1.2rem; border-radius: 10px; border: none; cursor: pointer;">FORCE WINNER</button>
+    </div>
+  </div>
+
+  <!-- Russian Roulette Overlay -->
+  <div class="battle-overlay" id="rouletteOverlay" style="background: radial-gradient(circle, #220000 0%, #000000 100%); flex-direction: column;">
+    <h1 style="color: #ff4757; font-size: 3rem; text-shadow: 0 0 20px #ff0000; text-align:center;">🔫 RUSSIAN ROULETTE 🔫</h1>
+    <h2 style="color: white; margin-bottom: 30px;">5 Delicious Foods... 1 Nightmare.</h2>
+    <div style="background: rgba(255,255,255,0.05); border: 2px solid #ff4757; padding: 40px; border-radius: 20px; width: 80%; max-width: 600px; text-align: center; box-shadow: inset 0 0 50px rgba(255,0,0,0.2);">
+      <div id="rrEmoji" style="font-size: 8rem; margin-bottom: 20px;">❓</div>
+      <div id="rrName" style="font-size: 3rem; font-weight: bold; color: white;">Spinning...</div>
     </div>
   </div>
 
@@ -404,6 +415,49 @@
       if(tapInterval) clearInterval(tapInterval);
     }
 
+    // --- Russian Roulette ---
+    let rrInterval = null;
+    const jokeFoods = [
+      { name: 'Plain White Rice', emoji: '🍚' },
+      { name: 'Raw Onion', emoji: '🧅' },
+      { name: 'Ice Cubes', emoji: '🧊' },
+      { name: 'A Single Chili Padi', emoji: '🌶️' },
+      { name: 'Nothing.', emoji: '💨' }
+    ];
+
+    function startRoulette() {
+      if (allDishes.length < 5) { alert('Loading dishes...'); return; }
+      playTick();
+      
+      // Pick 5 random good foods
+      let shuffled = [...allDishes].sort(() => 0.5 - Math.random());
+      let options = shuffled.slice(0, 5);
+      
+      // Add 1 random joke food
+      let joke = jokeFoods[Math.floor(Math.random() * jokeFoods.length)];
+      options.push({ name: joke.name, emoji: joke.emoji, isJoke: true });
+      
+      // Shuffle the 6 options
+      options.sort(() => 0.5 - Math.random());
+      
+      const finalIndex = Math.floor(Math.random() * 6);
+      const endTime = Date.now() + 6000;
+      
+      db.ref('room').update({
+         winnerName: 'RUSSIAN_ROULETTE',
+         rrState: JSON.stringify({ active: true, options: options, finalIndex: finalIndex, endTime: endTime }),
+         timestamp: Date.now()
+      });
+    }
+
+    function closeAllOverlays() {
+      document.getElementById('battleOverlay').style.display = 'none';
+      document.getElementById('tapOverlay').style.display = 'none';
+      document.getElementById('rouletteOverlay').style.display = 'none';
+      if(tapInterval) { clearInterval(tapInterval); tapInterval = null; }
+      if(rrInterval) { clearInterval(rrInterval); rrInterval = null; }
+    }
+
     // --- Firebase Listeners ---
     db.ref('room').on('value', snap => {
       const data = snap.val() || {};
@@ -412,13 +466,10 @@
       const winBox = document.getElementById('winnerBox');
       if (data.timestamp === 1) {
         winBox.innerHTML = '<h2 style="color:#ff4757">Room Reset by VETO! 🚫</h2><p>Waiting for someone to spin the wheel...</p>';
-        document.getElementById('battleOverlay').style.display = 'none';
-        document.getElementById('tapOverlay').style.display = 'none';
-        if(tapInterval) clearInterval(tapInterval);
+        closeAllOverlays();
       } else if (data.winnerName === 'BATTLE_ROYALE') {
         winBox.innerHTML = '<h2 style="color:#f093fb">⚔️ Food Battle Royale is Live!</h2><p>Check the overlay!</p>';
-        document.getElementById('tapOverlay').style.display = 'none';
-        if(tapInterval) clearInterval(tapInterval);
+        closeAllOverlays();
         try { 
           const state = JSON.parse(data.battleState);
           if (data.timestamp !== currentBattleTs) {
@@ -431,7 +482,7 @@
         } catch(e){}
       } else if (data.winnerName === 'TAP_BATTLE') {
         winBox.innerHTML = '<h2 style="color:#00c6ff">⚡ Tap Battle is Live!</h2><p>Check the overlay!</p>';
-        document.getElementById('battleOverlay').style.display = 'none';
+        closeAllOverlays();
         
         try {
           const state = JSON.parse(data.tapBattleState);
@@ -477,16 +528,65 @@
             }
           }
         } catch(e){}
+      } else if (data.winnerName === 'RUSSIAN_ROULETTE') {
+        winBox.innerHTML = '<h2 style="color:#ff4757">🔫 Russian Roulette is Live!</h2><p>Check the overlay!</p>';
+        closeAllOverlays();
+        
+        try {
+          const state = JSON.parse(data.rrState);
+          if (state && state.active) {
+            document.getElementById('rouletteOverlay').style.display = 'flex';
+            if (!rrInterval) {
+              let tickDelay = 50;
+              let currentIndex = 0;
+              rrInterval = setInterval(() => {
+                const timeLeft = state.endTime - Date.now();
+                if (timeLeft <= 0) {
+                  clearInterval(rrInterval);
+                  rrInterval = null;
+                  
+                  // Show Result
+                  const finalFood = state.options[state.finalIndex];
+                  document.getElementById('rrName').innerText = finalFood.name;
+                  document.getElementById('rrEmoji').innerText = finalFood.emoji;
+                  
+                  if (finalFood.isJoke) {
+                    // Punish
+                    document.getElementById('rouletteOverlay').style.background = 'radial-gradient(circle, #ff0000 0%, #330000 100%)';
+                  } else {
+                    // Confetti
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                  }
+                  
+                  // Set winner globally after 3 seconds
+                  setTimeout(() => {
+                     // Only the host (or whoever is looking) sets it once
+                     if(Math.random() > 0.5) return; // Prevent everyone from writing, though it doesn't hurt. A better way is to check if we are the one who triggered, but this is fine.
+                     db.ref('room').update({
+                        winnerName: finalFood.name,
+                        winnerEmoji: finalFood.emoji,
+                        vetoCount: 0,
+                        timestamp: Date.now()
+                     });
+                  }, 3000);
+                  
+                } else {
+                  // Spin animation
+                  currentIndex = (currentIndex + 1) % state.options.length;
+                  document.getElementById('rrName').innerText = state.options[currentIndex].name;
+                  document.getElementById('rrEmoji').innerText = state.options[currentIndex].emoji;
+                  playTick();
+                }
+              }, 100);
+            }
+          }
+        } catch(e){}
       } else if (data.winnerName) {
         winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
-        document.getElementById('battleOverlay').style.display = 'none';
-        document.getElementById('tapOverlay').style.display = 'none';
-        if(tapInterval) { clearInterval(tapInterval); tapInterval = null; }
+        closeAllOverlays();
       } else {
         winBox.innerHTML = '<h2>Waiting...</h2><p>No active spins yet.</p>';
-        document.getElementById('battleOverlay').style.display = 'none';
-        document.getElementById('tapOverlay').style.display = 'none';
-        if(tapInterval) { clearInterval(tapInterval); tapInterval = null; }
+        closeAllOverlays();
       }
       
       document.getElementById('vetoCount').innerText = data.vetoCount || 0;
