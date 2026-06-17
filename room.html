@@ -86,8 +86,17 @@
         <button class="battle-btn" onclick="startBattle()" style="margin-top: 10px;">⚔️ Battle Royale</button>
         <button class="battle-btn" onclick="startTapBattle()" style="background: linear-gradient(135deg, #00c6ff, #0072ff); margin-top: 10px;">⚡ Tap Battle</button>
         <button class="battle-btn" onclick="startRoulette()" style="background: linear-gradient(135deg, #111, #444); color: #ff4757; margin-top: 10px; border: 1px solid #ff4757;">🔫 Russian Roulette</button>
+        <button class="battle-btn" onclick="startGroupSwipe()" style="background: linear-gradient(135deg, #ff758c, #ff7eb3); margin-top: 10px;">💖 Group Tinder Match</button>
+        <button class="battle-btn" onclick="startSaboteur()" style="background: #333; color: #ffeb3b; margin-top: 10px;">🕵️ Assign Secret Saboteur</button>
       </div>
       
+      <!-- Coin Bank -->
+      <div class="card" style="border-color: gold;">
+        <h2 style="color: gold; margin-bottom: 5px;">💰 Bank</h2>
+        <h3 style="margin-top: 0;">Balance: <span id="coinBal">100</span> Coins</h3>
+        <button class="pay-btn" style="background: gold; color: black; width: 100%; font-weight: bold; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(255,215,0,0.3);" onclick="bribeRespin()">💸 Bribe Re-Spin (50 Coins)</button>
+      </div>
+
       <!-- Who Pays -->
       <div class="card">
         <h2>💸 Who Pays?</h2>
@@ -155,12 +164,33 @@
     </div>
   </div>
 
+  <!-- Group Swipe Overlay -->
+  <div class="battle-overlay" id="swipeOverlay" style="background: rgba(233,30,99,0.95); flex-direction: column;">
+    <h1 style="color: white; font-size: 3rem; text-shadow: 0 0 20px #ffeb3b; text-align:center; margin-bottom: 5px;">💖 GROUP MATCH 💖</h1>
+    <h2 style="color: white; margin-bottom: 20px; font-weight: normal;">Swipe until we all agree!</h2>
+    <div id="swipeCard" style="background: white; color: black; border-radius: 20px; padding: 40px; text-align: center; width: 80%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div id="swipeEmoji" style="font-size: 8rem; margin-bottom: 20px;">❓</div>
+      <div id="swipeName" style="font-size: 2.5rem; font-weight: bold;">Loading...</div>
+    </div>
+    <div style="display: flex; gap: 40px; margin-top: 30px;">
+      <button onclick="voteSwipe(false)" style="background: white; border: none; font-size: 3rem; padding: 20px; border-radius: 50%; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.1s;">❌</button>
+      <button onclick="voteSwipe(true)" style="background: white; border: none; font-size: 3rem; padding: 20px; border-radius: 50%; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.1s;">💖</button>
+    </div>
+  </div>
+
   <!-- Emoji Engine UI -->
   <div class="emoji-bar">
     <button class="e-btn" onclick="sendEmoji('🔥')">🔥</button>
     <button class="e-btn" onclick="sendEmoji('🤤')">🤤</button>
     <button class="e-btn" onclick="sendEmoji('🤮')">🤮</button>
     <button class="e-btn" onclick="sendEmoji('👎')">👎</button>
+  </div>
+
+  <!-- Saboteur UI -->
+  <div id="saboteurPanel" style="display:none; position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.95); padding: 15px; border: 2px solid #ff4757; border-radius: 10px; z-index: 1000; text-align: center; box-shadow: 0 5px 20px rgba(255,0,0,0.5);">
+    <h3 style="color: #ff4757; margin:0 0 10px 0;">🕵️ YOU ARE THE SABOTEUR</h3>
+    <input type="text" id="sabFood" placeholder="Target Food..." style="width: 90%; margin-bottom: 10px; padding: 8px; border-radius: 5px; outline: none; border: none;">
+    <button onclick="sabotageSpin()" style="background: #ff4757; color: white; border: none; padding: 8px 10px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;">Force Result</button>
   </div>
 
   <script>
@@ -454,8 +484,112 @@
       document.getElementById('battleOverlay').style.display = 'none';
       document.getElementById('tapOverlay').style.display = 'none';
       document.getElementById('rouletteOverlay').style.display = 'none';
+      document.getElementById('swipeOverlay').style.display = 'none';
       if(tapInterval) { clearInterval(tapInterval); tapInterval = null; }
       if(rrInterval) { clearInterval(rrInterval); rrInterval = null; }
+    }
+
+    // --- Group Swipe ---
+    let localSwipeIndex = 0;
+    let currentSwipeOptions = [];
+
+    function startGroupSwipe() {
+      if (allDishes.length < 15) { alert('Loading dishes...'); return; }
+      playTick();
+      
+      let shuffled = [...allDishes].sort(() => 0.5 - Math.random());
+      let options = shuffled.slice(0, 15);
+      
+      db.ref('room/swipeVotes').remove();
+      db.ref('room').update({
+         winnerName: 'GROUP_SWIPE',
+         swipeState: JSON.stringify({ active: true, options: options }),
+         timestamp: Date.now()
+      });
+    }
+
+    function renderSwipeCard() {
+      if (localSwipeIndex >= currentSwipeOptions.length) {
+         document.getElementById('swipeName').innerText = "Out of dishes! Wait for others.";
+         document.getElementById('swipeEmoji').innerText = "😅";
+         return;
+      }
+      const food = currentSwipeOptions[localSwipeIndex];
+      document.getElementById('swipeName').innerText = food.name;
+      document.getElementById('swipeEmoji').innerText = food.emoji;
+      
+      const card = document.getElementById('swipeCard');
+      card.style.transform = 'scale(0.9)';
+      setTimeout(() => card.style.transform = 'scale(1)', 100);
+    }
+
+    function voteSwipe(isYes) {
+      if (localSwipeIndex >= currentSwipeOptions.length) return;
+      playTick();
+      const food = currentSwipeOptions[localSwipeIndex];
+      let nickname = localStorage.getItem('roomNickname');
+      if (!nickname) { nickname = "Player_" + Math.floor(Math.random()*1000); localStorage.setItem('roomNickname', nickname); }
+      
+      if (isYes) {
+         // Push vote to firebase
+         db.ref('room/swipeVotes/' + food.name).transaction(votes => {
+            if (!votes) votes = {};
+            votes[nickname] = true;
+            return votes;
+         });
+      }
+      
+      localSwipeIndex++;
+      renderSwipeCard();
+    }
+
+    // --- Coins & Bribing ---
+    let myCoins = parseInt(localStorage.getItem('roomCoins') || '100');
+    document.getElementById('coinBal').innerText = myCoins;
+
+    function bribeRespin() {
+      if (myCoins < 50) { alert('Not enough coins!'); return; }
+      myCoins -= 50;
+      localStorage.setItem('roomCoins', myCoins);
+      document.getElementById('coinBal').innerText = myCoins;
+      playTick();
+      db.ref('room').update({
+         winnerName: 'Someone Bribed for a Re-Spin! 💰',
+         winnerEmoji: '💸',
+         vetoCount: 0,
+         timestamp: Date.now(),
+         battleState: '',
+         tapBattleState: '',
+         rrState: '',
+         swipeState: ''
+      });
+    }
+
+    // --- Saboteur ---
+    function startSaboteur() {
+      let pool = [];
+      try { pool = JSON.parse(document.getElementById('poolBox').getAttribute('data-pool') || '[]'); } catch(e){}
+      if (pool.length < 2) { alert('Need at least 2 people in the Who Pays pool to assign a Saboteur!'); return; }
+      
+      const saboteur = pool[Math.floor(Math.random() * pool.length)];
+      db.ref('room').update({ saboteurName: saboteur });
+      alert('Saboteur assigned silently! Only they will know.');
+    }
+
+    function sabotageSpin() {
+      const food = document.getElementById('sabFood').value.trim();
+      if(!food) return;
+      playTick();
+      db.ref('room').update({
+         winnerName: food,
+         winnerEmoji: '🕵️',
+         vetoCount: 0,
+         timestamp: Date.now(),
+         battleState: '',
+         tapBattleState: '',
+         rrState: '',
+         swipeState: ''
+      });
     }
 
     // --- Firebase Listeners ---
@@ -581,6 +715,21 @@
             }
           }
         } catch(e){}
+      } else if (data.winnerName === 'GROUP_SWIPE') {
+        winBox.innerHTML = '<h2 style="color:#ffeb3b">💖 Group Match is Live!</h2><p>Check the overlay!</p>';
+        closeAllOverlays();
+        
+        try {
+          const state = JSON.parse(data.swipeState);
+          if (state && state.active) {
+            document.getElementById('swipeOverlay').style.display = 'flex';
+            if (currentSwipeOptions.length === 0 || currentSwipeOptions[0].name !== state.options[0].name) {
+               currentSwipeOptions = state.options;
+               localSwipeIndex = 0;
+               renderSwipeCard();
+            }
+          }
+        } catch(e){}
       } else if (data.winnerName) {
         winBox.innerHTML = `<h2 style="font-size:2rem; margin-bottom:0;">${data.winnerName}</h2><div style="font-size:6rem">${data.winnerEmoji}</div>`;
         closeAllOverlays();
@@ -594,12 +743,20 @@
       // 2. Who Pays
       let pool = [];
       try { pool = JSON.parse(data.whoPaysPool || '[]'); } catch(e){}
+      document.getElementById('poolBox').setAttribute('data-pool', JSON.stringify(pool));
       document.getElementById('poolBox').innerHTML = pool.map(n => `<span class="pool-tag">${n}</span>`).join('');
       
       if (data.whoPaysLoser && !isPaySpinning) {
         document.getElementById('loserBox').innerHTML = `<span style="color:#ff4757">💸 ${data.whoPaysLoser} pays!</span>`;
       } else if (!data.whoPaysLoser && !isPaySpinning) {
         document.getElementById('loserBox').innerHTML = '';
+      }
+
+      // 3. Saboteur UI
+      if (data.saboteurName && data.saboteurName === localStorage.getItem('roomNickname')) {
+        document.getElementById('saboteurPanel').style.display = 'block';
+      } else {
+        document.getElementById('saboteurPanel').style.display = 'none';
       }
     });
 
@@ -609,6 +766,33 @@
         knownEmojis.push(e.time);
         spawnEmojiLocal(e.emoji, e.x);
       }
+    });
+
+    db.ref('room/swipeVotes').on('value', snap => {
+       const votes = snap.val() || {};
+       let pool = [];
+       try { pool = JSON.parse(document.getElementById('poolBox').getAttribute('data-pool') || '[]'); } catch(e){}
+       // Required votes is the number of people in the Who Pays pool, minimum 2.
+       const required = Math.max(2, pool.length);
+       
+       for (let foodName in votes) {
+          const yesCount = Object.keys(votes[foodName]).length;
+          if (yesCount >= required) {
+             // IT'S A MATCH!
+             const matchedFood = currentSwipeOptions.find(f => f.name === foodName);
+             if (matchedFood) {
+                // Prevent infinite loop by clearing state
+                db.ref('room/swipeVotes').remove();
+                db.ref('room').update({
+                   winnerName: matchedFood.name,
+                   winnerEmoji: matchedFood.emoji,
+                   vetoCount: 0,
+                   timestamp: Date.now(),
+                   swipeState: ''
+                });
+             }
+          }
+       }
     });
   </script>
 </body>
